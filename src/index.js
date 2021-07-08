@@ -424,6 +424,7 @@ Component({
             const _this = this;
             const {probeData} = this.data;
             allMessages = [];
+            pomelo.disconnect();
             // mantisChat.chat.isConnecting = true;
 
             let probe = probeData;
