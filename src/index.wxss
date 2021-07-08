@@ -1,0 +1,82 @@
+@import "./common.wxss";
+@import "./reset.wxss";
+
+.mantisMain {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 20%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mantisChatHeader {
+    height: 50px;
+    background: #05c494;
+    color:#fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mantisChatHeader .title{
+    margin-left: 10px;
+}
+
+.mantisChatHeader .close{
+    margin-right: 10px;
+}
+
+.mantisChatMain {
+    flex: 1;
+}
+
+.mantisFooter {
+    height: 90px;
+}
+
+.mantisInputBox{
+    display: flex;
+    align-items: center;
+}
+
+.mantisInput{
+    height: 36px;
+    flex:1;
+    font-size: 12px;
+    padding:5px;
+}
+.mantisSendBtn{
+    width: 60px;
+    height: 36px;
+    background: #05c494;
+    color: #fff;
+    margin:0 8px;
+    font-size:12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.mantisVersion{
+    text-align: center;
+    font-size:12px;
+    padding: 5px 0;
+    color: #ccc;
+}
+
+.minimizeBox{
+    color:#fff;
+    background: #09c45c;
+    width: 60px;
+    height: 60px;
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

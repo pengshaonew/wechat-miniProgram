@@ -1,0 +1,19 @@
+<view class="mantisMain" style="display:{{isShowMantisChat?'flex':'none'}}">
+    <view class="mantisChatHeader">
+        <view class="title">标题</view>
+        <view class="close" bindtap="_hideChat">关闭</view>
+    </view>
+    <view class="mantisChatMain">
+        <view id="chat_history"></view>
+    </view>
+    <view class="mantisFooter">
+        <view class="mantisInputBox">
+            <input class="mantisInput" auto-focus placeholder="请输入" bindinput="bindKeyInput" value="{{inputValue}}" />
+            <button class="mantisSendBtn" bindtap="sendMessage">发送</button>
+        </view>
+        <view class="mantisVersion">技术咨询由螳螂科技提供</view>
+    </view>
+</view>
+<view class="minimizeBox" style="display:{{isShowMantisChat?'none':'flex'}}" bindtap="_showChat">
+    发起
+</view>
