@@ -4,7 +4,46 @@
         <view class="close" bindtap="_hideChat">关闭</view>
     </view>
     <view class="mantisChatMain">
-        <view id="chat_history"></view>
+        <scroll-view
+                scroll-y="true"
+                bindscrolltoupper="upper"
+                bindscrolltolower="lower"
+                bindscroll="scroll"
+                scroll-top="{{scrollTop}}"
+                class="chat_history"
+        >
+                <view class="hisMsg" wx:if="{{hasHistoryMsg}}">
+                    <block>
+
+                    </block>
+                </view>
+                <view class="moreMsg" wx:if="{{hasHistoryMsg}}">
+                    <text>以上是历史消息</text>
+                </view>
+                <view class="mbChatPromDiv">
+                    <rich-text class='rich_span' nodes='{{probeData.mbPromTxt}}'></rich-text>
+                </view>
+                <block wx:for="{{msgList}}">
+                    <view class="msgItem msgItemL" wx:if="{{item.from === mantisChat.uid}}">
+                        <view class="msgItemTime">{{item.time}}</view>
+                        <view class="msgItemDown">
+                            <image class="agentHead" mode="aspectFit" src="{{mantisChat.agent_msg_icon || 'https://chat-profile.oss-cn-hangzhou.aliyuncs.com/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg'}}"></image>
+                            <view class="msgCon">
+                                {{item.msg}}
+                            </view>
+                        </view>
+                    </view>
+                    <view class="msgItem msgItemR" wx:if="{{item.from !== mantisChat.uid}}">
+                        <view class="msgItemTime">{{item.time}}</view>
+                        <view class="msgItemDown">
+                            <view class="msgCon">
+                                {{item.msg}}
+                            </view>
+                            <image class="agentHead" mode="aspectFit" src="{{mantisChat.agent_msg_icon || 'https://chat-profile.oss-cn-hangzhou.aliyuncs.com/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg'}}"></image>
+                        </view>
+                    </view>
+                </block>
+        </scroll-view>
     </view>
     <view class="mantisFooter">
         <view class="mantisInputBox">
