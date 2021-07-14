@@ -1,0 +1,12 @@
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "plugins": {
+    "mantisChat": {
+      "version": "dev",
+      "provider": "wxc6e2bf2f6fc2e53a"
+    }
+  },
+  "sitemapLocation": "sitemap.json"
+}
