@@ -33,9 +33,20 @@
 - wxml文件
 
 ```html
+<!--
+    发起会话调用方法 bindtap="mantisRequestChat"
+-->
+<!--<button bindtap="mantisRequestChat">发起会话</button>-->
 
-<button bindtap="mantisRequestChat">发起会话</button>
-<mantisChat id="mantisChat"/>
+<!--
+    companyId: 客户的公司id
+    probeId: 探头id
+-->
+<mantisChat 
+        id="mantisChat"
+        companyId="7011"
+        probeId="5ea96e4cdc4cec4b85b73e68"
+/>
 ```
 
 - js文件

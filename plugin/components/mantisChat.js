@@ -144,10 +144,14 @@ Component({
             type: String,
             value: ''
         },
+        phone: {
+            type: String,
+            value: ''
+        }
     },
-
     data: {
         isShowChat: false,
+        mantisTel:'',
         inputValue: '',
         scrollTop: 0,
         hasHistoryMsg: false, //是否有历史消息
@@ -167,15 +171,18 @@ Component({
             request: {}
         }
     },
+    observers: {
+        'phone': function (phone){
+            if(phone){
+                if(mantisChat.chat.connected && phone){
+                    this.sendMessage(phone);
+                }
+            }
+        }
+    },
 
     lifetimes: {
         attached() {
-            wx.getStorage({
-                key: 'key',
-                success (res) {
-                    console.log(176, res.data)
-                }
-            })
             this.initParams();
             this.loadProbeData();
         }
@@ -236,7 +243,7 @@ Component({
         initParams: function () {
             const {companyId, mantisChat} = this.data;
             let mantisChatNew = mantisChat;
-            mantisChatNew.uid = this.handleUid(this.mantisCreateGuid() + "@" + companyId);
+            mantisChatNew.uid = this.handleUid();
             this.handleMantisChat(mantisChatNew);
         },
         queryEntry: function (callback) {
@@ -349,7 +356,7 @@ Component({
                 const say_from = data.say_from;
                 let msgListNew = [...this.data.msgList];
                 msgListNew.push(data);
-                if(say_from === 'A' || say_from === 'V'){
+                if (say_from === 'A' || say_from === 'V') {
                     console.log(msgListNew);
                     this.setData({
                         msgList: msgListNew
@@ -387,7 +394,21 @@ Component({
 
             // 未关闭对话的历史消息
             pomelo.on('ON_HIS_MSG', data => {
-                console.log('未关闭对话的历史消息');
+                console.log('未关闭对话的历史消息', data);
+                let msgListNew = [];
+                data.msg.reverse().forEach(item=>{
+                    if(item.say_from === 'A' || item.say_from === 'V'){
+                        msgListNew.push(item);
+                    }
+                })
+                this.setData({
+                    msgList: msgListNew
+                })
+            })
+
+            // 收到历史消息
+            pomelo.on('ON_HIS_CHAT_MSG', data => {
+                console.log('收到历史消息', data);
             })
 
             // 咨询师未匹配
@@ -454,7 +475,7 @@ Component({
         },
         requestChatInner: function (host, port) {
             const _this = this;
-            const {probeData, mantisChat} = this.data;
+            const {probeData, mantisChat, companyId} = this.data;
             allMessages = [];
             // mantisChat.chat.isConnecting = true;
 
@@ -549,24 +570,28 @@ Component({
                     visitorId: mantisChat.uid,
                     msgId: data.msgId
                 }, function (data) {
-                    console.log('消息回执返回',data);
+                    console.log('消息回执返回', data);
                 });
             }
         },
-        sendMessage: function () {
-            const {probeData, inputValue, mantisChat} = this.data;
+        btnSendMsg: function () {
+            const {inputValue} = this.data;
+            this.sendMessage(inputValue);
+        },
+        sendMessage: function (msgContent) {
+            const {probeData,mantisChat, companyId} = this.data;
             const route = "chat.chatHandler.customerSend";
             pomelo.request(route, {
                 //消息接口
                 msgId: '',
-                content: inputValue,
+                content: msgContent,
                 sgId: '262',
                 chatId: mantisChat.chatId,
                 agentId: 'tantou@7011',
                 target: "",
                 type: "text",
                 projectId: probeData.projectId,
-                companyId: probeData.companyId,
+                companyId,
                 channelId: mantisChat.channelId,
                 from: mantisChat.uid,
                 msgType: ''
@@ -593,9 +618,51 @@ Component({
                 inputValue: e.detail.value
             })
         },
-        callPhone:function (){
+        callPhone: function () {
             wx.makePhoneCall({
                 phoneNumber: '1710250228'
+            })
+        },
+        chooseImage: function () {
+            let tempFilePaths = [];
+            wx.chooseImage({
+                count: 1,
+                sizeType: ['original', 'compressed'],
+                sourceType: ['album', 'camera'],
+                success: res => {
+                    if (res.tempFilePaths.length > 0) {
+                        tempFilePaths = tempFilePaths.concat(res.tempFilePaths);
+                        tempFilePaths.map(item => {
+                            this.uploadImg(item);
+                        });
+                    }
+                }
+            });
+        },
+        uploadImg: function (tempFilePath) {
+            const {companyId, probeData, mantisChat} = this.data;
+            let url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/upload/uploadImg.do?vistorId=" + mantisChat.uid + "&companyId=" + companyId;
+            wx.uploadFile({
+                url,
+                header: {
+                    'content-type': 'multipart/form-data'
+                },
+                filePath: tempFilePath,
+                name: 'file',
+                success: res => {
+
+                    let data = JSON.parse(res.data);
+                    if(data.data){
+                        console.log(data.data);
+                        this.sendMessage(`<img src="${data.data}" />`);
+                    }
+                },
+                fail: res => {
+                    wx.showToast({
+                        title: '图片加载失败',
+                        icon: 'none'
+                    });
+                }
             })
         }
     },
