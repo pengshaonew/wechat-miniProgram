@@ -386,7 +386,7 @@
 }
 
 .leavingMessage .main .leavingInput {
-    border-bottom: 1px solid #b7b7b7;
+    border-bottom: 1px solid #d4d4d4;
     height: 64rpx;
     margin-bottom: 30rpx;
     padding-left: 20rpx;
@@ -402,6 +402,13 @@
     font-size: 28rpx;
     background: #06CB94;
     border-radius: 0;
+}
+
+.leavingMessage .complete{
+    text-align: center;
+    margin-top: 200rpx;
+    font-size: 30rpx;
+    color: #333;
 }
 
 
@@ -589,6 +596,7 @@
     padding: 0 16rpx;
     box-sizing: border-box;
     font-size: 26rpx;
+    text-align: left;
 }
 
 .mantisRetainMainM_main .mantisForm .mantisTelCodeM {

@@ -1,5 +1,5 @@
 // plugin/components/mantisChat.js
-let startTime=0;
+let startTime = 0;
 const exportData = require('../index');
 const pomelo = require('pomelo-weixin-client');
 
@@ -106,7 +106,7 @@ let firstShow = true;
 let btnLoading;
 
 //验证码timer
-var mantisCodeTimer = null;
+let mantisCodeTimer = null;
 
 //退出挽留PC
 let retainRemainTimer = null;  //持续停留时间timer
@@ -1214,7 +1214,7 @@ Component({
         handleUid: function (passedInUid) {
             const {companyId, uid} = this.data;
             let companyStr = "@" + companyId;
-            if(uid){
+            if (uid) {
                 wx.setStorage({
                     key: "mantis" + companyId,
                     data: uid
@@ -1270,7 +1270,7 @@ Component({
                     siteId: mantisChat.siteId,
                     companyId: probe.companyId,
                     buId: probe.buId,
-                    stag: probe.stag,
+                    stag: mantisChat.stag,
                     // 如果采用指定客服分组的方式发起
                     sgId: probe.defaultSvgId,
                     defaultSgId: probe.defaultSvgId,
@@ -1335,7 +1335,7 @@ Component({
                         let mLen = m.length;
                         for (let j = 0; j < mLen; j++) {
                             let f = m[j];
-                            let msg = this.filterWelcomeMsg(f.msg);
+                            let msg = f.msg;
                             if (!!msg) {
                                 if (!isSent) {
                                     let dataTime = Date.now();
@@ -1417,7 +1417,6 @@ Component({
                         for (let j = 0; j < m.length; j++) {
                             let f = m[j];
                             if (!!f.msg) {
-                                f.msg = this.filterWelcomeMsg(f.msg);
                                 if (!!f.msg) {
                                     welcomeMsgs.push(f);
                                 }
@@ -1561,11 +1560,11 @@ Component({
             }
         },
         scrollDown(time) {
-            setTimeout(()=>{
+            setTimeout(() => {
                 this.setData({
                     scrollTop: 999999
                 })
-            },time || 0);
+            }, time || 0);
         },
         // 清理历史聊天信息
         clearHisMsg() {
@@ -1878,7 +1877,7 @@ Component({
         },
         // 振动提醒
         vibrate() {
-            wx.vibrateShort({type:'medium'});
+            wx.vibrateShort({type: 'medium'});
         },
         // TODO  声音提醒
         playSound() {
@@ -2166,7 +2165,71 @@ Component({
         //TODO 咨询师不在线留言数据提交
         formSubmit(e) {
             console.log('form发生了submit事件，携带数据为：', e.detail.value);
+            const {probeData, mantisChat, companyId, probeId} = this.data;
+            const url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
+            let values = e.detail.value;
+            let resvInfo = {};
+            resvInfo.probeId = probeId;
+            resvInfo.uid = mantisChat.uid;
+            resvInfo.siteId = mantisChat.siteId;
+            resvInfo.buId = probeData.buId;
+            resvInfo.companyId = companyId;
+            resvInfo.ele = mantisChat.ele;
+            resvInfo.stag = mantisChat.paras.stag;
+            resvInfo.pageUrl = mantisChat.paras.pageUrl || 'pages/index/index';
+            resvInfo.referer = mantisChat.paras.referer;
+            resvInfo.lpUrl = mantisChat.paras.lpUrl || 'pages/index/index';
+            resvInfo.projectId = probeData.projectId;
+            resvInfo.reqVistorMedia = "mobile";
+            resvInfo.thirdUserId = mantisChat.paras.thirdUserId;
+            resvInfo.thirdAccount = mantisChat.paras.thirdAccount;
 
+            let t = mantisChat.cookieRefer;
+            try {
+                if (!!t) {
+                    let count = 0;
+                    while (count < 4) {
+                        let tmp = t + "";
+                        t = decodeURI(t);
+                        if (tmp == t) {
+                            break;
+                        }
+                        count = count + 1;
+                    }
+                }
+            } catch (error) {
+            }
+
+            resvInfo.messageType = "SOURCE_CHAT_MSG";
+            resvInfo.phone1 = values.phone;
+            resvInfo.name = values.name;
+            resvInfo.content = values.content;
+
+            wx.request({
+                url,
+                data: resvInfo,
+                method: 'POST',
+                success: res => {
+                    if (res.data) {
+                        if (res.data.flag === 1) {
+                            this.setData({
+                                completeText: '预约成功, 咨询顾问会很快联系您,请稍候...'
+                            })
+                        } else {
+                            wx.showToast({
+                                title: res.data.message,
+                                icon: 'error'
+                            })
+                        }
+                    }
+                },
+                fail: () => {
+                    wx.showToast({
+                        title: "预约失败",
+                        icon: 'error'
+                    })
+                }
+            });
         },
         // 访客表单消息数据提交
         formMsgSubmit(e) {
@@ -2177,15 +2240,15 @@ Component({
             let msgCon = '';
             let keyArray = Object.keys(formObj);
             let errFlag = null;
-            keyArray.forEach(item=>{
+            keyArray.forEach(item => {
                 let val = formObj[item];
                 switch (item) {
                     case '手机号':
                         if (!/^1[3-9]\d{9}$/.test(val)) {
                             errFlag = true;
                             wx.showToast({
-                                title:'手机号不正确',
-                                icon:'error'
+                                title: '手机号不正确',
+                                icon: 'error'
                             })
                         }
                         break;
@@ -2193,8 +2256,8 @@ Component({
                         if (!/(^[a-zA-Z][-_a-zA-Z0-9]{5,19}$)|(^1[3-9]\d{9}$)/.test(val)) {
                             errFlag = true;
                             wx.showToast({
-                                title:'微信号不正确',
-                                icon:'error'
+                                title: '微信号不正确',
+                                icon: 'error'
                             })
                         }
                         break;
@@ -2202,25 +2265,25 @@ Component({
                         if (!val) {
                             errFlag = true;
                             wx.showToast({
-                                title:item + '不能为空',
-                                icon:'error'
+                                title: item + '不能为空',
+                                icon: 'error'
                             })
                         }
                 }
                 msgCon += item + ':' + val + '<br>'
             })
-            if(errFlag) return;
+            if (errFlag) return;
             this.updateFormMsg(msgId);
-            this.sendMessage(msgCon,'F_S');
+            this.sendMessage(msgCon, 'F_S');
             msgListNew = msgListNew.filter(item => (item._id || item.msgId) !== msgId);
             this.setData({
-                msgList:msgListNew
+                msgList: msgListNew
             })
             wx.showToast({
-                title:'提交成功'
+                title: '提交成功'
             })
         },
-        updateFormMsg(msgId){
+        updateFormMsg(msgId) {
             const {mantisChat, companyId} = this.data;
             let route = "chat.chatHandler.submitForm";
             if (mantisChat.chat.connected) {
@@ -2268,6 +2331,7 @@ Component({
                             mantisNew.displayIntervalFlag &&
                             mantisNew.displayCountActual < mantisNew.displayCount &&
                             !_this.data.isShowChat &&
+                            !_this.data.isShowLeave &&
                             !mantisNew.isShowRetain
                         ) {
                             _this.mantisShowRetain();
@@ -2347,25 +2411,25 @@ Component({
             this.handleMantisChat(mantisChatNew);
         },
         // 监听挽留手机号
-        changeRetainPhone(e){
+        changeRetainPhone(e) {
             let value = e.detail.value;
             this.setData({
-                retainPhone:value
+                retainPhone: value
             })
         },
         //  获取验证码
-        sendCode(){
+        sendCode() {
             const {retainPhone, probeData, companyId} = this.data;
-            var url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/smsApi/sendVerificationCode.do";
+            let url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/smsApi/sendVerificationCode.do";
             if (!/^1[3-9]\d{9}$/.test(retainPhone)) {
                 wx.showToast({
-                    title:'请输入正确的手机号',
-                    icon:'error'
+                    title: '请输入正确的手机号',
+                    icon: 'error'
                 })
                 return;
             }
             this.codeTiming();
-            var params = {
+            let params = {
                 companyId,
                 phone: retainPhone
             }
@@ -2374,30 +2438,30 @@ Component({
                 data: params,
                 method: 'POST',
                 success: res => {
-                    if(res.data && res.data.flag === 1){
+                    if (res.data && res.data.flag === 1) {
                         wx.showToast({
-                            title:'发送成功',
+                            title: '发送成功',
                         })
                     }
                 },
                 fail: () => {
                     // 提交失败
                     wx.showToast({
-                        title:'发送失败',
+                        title: '发送失败',
                         icon: 'error'
                     })
                 }
             });
         },
-        codeTiming(){
+        codeTiming() {
             const _this = this;
-            var count = 60;
+            let count = 60;
             mantisCodeTimer = setInterval(function () {
                 if (count < 1) {
                     mantisCodeTimer && clearInterval(mantisCodeTimer);
                     mantisCodeTimer = null;
                     _this.setData({
-                        codeSending:''
+                        codeSending: ''
                     })
                     return;
                 }
@@ -2408,7 +2472,7 @@ Component({
             }, 1000);
         },
         // 退出挽留数据提交
-        retainSubmit(e){
+        retainSubmit(e) {
             const {mantisChat, probeData, companyId} = this.data;
             let values = e.detail.value;
             console.log(values);
@@ -2418,8 +2482,8 @@ Component({
             let stayId = e.target.dataset.stayid;
             if (!/^1[3-9]\d{9}$/.test(phone)) {
                 wx.showToast({
-                    title:'请输入正确的手机号',
-                    icon:'error'
+                    title: '请输入正确的手机号',
+                    icon: 'error'
                 })
                 return;
             }
@@ -2429,7 +2493,7 @@ Component({
                 phone,
                 stayId
             };
-            if(phoneCode){
+            if (phoneCode) {
                 params.phoneCode = phoneCode;
             }
 
@@ -2438,20 +2502,21 @@ Component({
                 data: params,
                 method: 'POST',
                 success: res => {
-                    if(res.data && res.data.flag === 1){
+                    if (res.data && res.data.flag === 1) {
                         wx.setStorage({
-                            key:'mantisSendTelFlag',
-                            data:phone
+                            key: 'mantisSendTelFlag',
+                            data: phone
                         });
                         this.setData({
                             isShowSubmitComplete: true
                         });
-                        if(mantisChat.chat.connected){
+                        if (mantisChat.chat.connected) {
                             this.sendMessage(phone, 'R_S');
-                        }else{
-                            //  TODO 如果没有发起会话则数据进入留言查询
-                            exportData.sendPage({
-
+                        } else {
+                            //  如果没有发起会话则数据进入留言查询
+                            this.sendPage({
+                                phone
+                            }, () => {
                             });
                         }
                     }
@@ -2459,17 +2524,127 @@ Component({
                 fail: () => {
                     // 提交失败
                     wx.showToast({
-                        title:'提交失败',
+                        title: '提交失败',
                         icon: 'error'
                     })
                 }
             });
         },
-        bindPickerChange: function(e) {
+        bindPickerChange: function (e) {
             console.log('picker发送选择改变，携带值为', e.detail.value)
             this.setData({
                 index: e.detail.value
             })
+        },
+        // TODO 表单留言
+        sendPage(values, callbackSuccess, callbackFail) {
+            const {probeId, companyId, probeData, mantisChat} = this.data;
+            let paras = {};
+            const url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
+            let otherParams = values.others || {};
+            delete values.isRetain;
+            let site = mantisChat.siteId;
+            if (!site) {
+                site = 0;
+            }
+
+            if (otherParams.area) {
+                otherParams.area = otherParams.area.replace(/\s+/g, '');
+            }
+            paras.uid = wx.getStorageSync('mantis' + companyId);
+            paras.siteId = site;
+            paras.stag = mantisChat.stag;
+            //页面地址
+            paras.pageUrl = 'pages/index/index';
+
+            if (!!otherParams.csProjectId) {
+                paras.projectId = otherParams.csProjectId;
+            } else {
+                paras.projectId = probeData.projectId;
+            }
+
+            // 广告信息
+            paras.adInfo = mantisChat.parsedRefer || {};
+            paras.reqVistorMedia = "mobile";
+
+            let en = {
+                'uid': paras.uid,
+                'stag': paras.stag,
+                'ele': '',
+                'siteId': paras.siteId,
+                'buId': probeData.buId,
+                'probeId': probeId,
+                'companyId': companyId,
+                'pageUrl': paras.pageUrl,
+                'projectId': paras.projectId,
+                "referer": mantisChat.referer,
+                "lpUrl": mantisChat.landPageUrl,
+                "reqVistorMedia": "mobile",
+                "reqSearchWd": '',
+                "reqAd": '',
+                "pageparam": values.pageparam,
+                'messageType': 'SOURCE_PAGE_MSG',
+                'phone1': values.phone,
+                'name': values.name,
+                'email': '',
+                'content': values.content,
+                'thirdAccount': values.thirdAccount,
+                'thirdUserId': values.thirdUserId,
+
+                /**
+                 * 扩展信息区域，需要双方协定others的字段
+                 */
+                'registerType': values.registerType,
+                'area': otherParams.area,
+                'examType': otherParams.examType,
+                'major': otherParams.major,
+                'school': otherParams.school,
+                'registerLevel': otherParams.registerLevel,
+                'education': otherParams.education,
+                'qq': otherParams.qq,
+                'weChat': otherParams.weChat
+            };
+
+            if (otherParams.customerFieldMap) {
+                en.customerFieldMap = otherParams.customerFieldMap || {};
+            }
+            wx.request({
+                url,
+                data: en,
+                method: 'POST',
+                success: res => {
+                    if (res.data) {
+                        if (res.data.flag === 1) {
+                            if (callbackSuccess) {
+                                callbackSuccess()
+                            } else {
+                                wx.showToast({
+                                    title: '留言成功，请耐心等待通知'
+                                });
+                            }
+                        } else {
+                            if (callbackFail) {
+                                callbackFail();
+                            } else {
+                                wx.showToast({
+                                    title: '留言失败',
+                                    icon: 'error'
+                                });
+                            }
+                        }
+                    }
+                },
+                fail: () => {
+                    if (callbackFail) {
+                        callbackFail();
+                    } else {
+                        wx.showToast({
+                            title: '留言失败',
+                            icon: 'error'
+                        });
+                    }
+                }
+            });
         },
         //获取设备信息
         getDeviceInfo() {
@@ -2594,25 +2769,6 @@ Component({
                 }
             }
             return tempWeChat;
-        },
-        filterWelcomeMsg(msg) {
-            const mantisChat = this.data.mantisChat;
-            // 没有占位符，直接返回
-            if (msg.indexOf("#SEARCH_WORD#") === -1) {
-                return msg;
-            }
-
-            // 如果有SEARCH_WORD 占位符
-            if (!!mantisChat.paras.cookieRefer) {
-                try {
-                    let obj = JSON.parse(mantisChat.paras.cookieRefer);
-                    if (!!obj && !!obj.searchwd) {
-                        return msg.replace("#SEARCH_WORD#", obj.searchwd);
-                    }
-                } catch (e) {
-                }
-            }
-            return null;
         },
         dateFormat(date, format) {
             if (format === undefined) {
