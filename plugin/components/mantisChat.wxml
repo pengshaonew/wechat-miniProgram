@@ -1,7 +1,13 @@
 <view class="mantisMain" style="display:{{isShowChat?'flex':'none'}}">
-    <view class="mantisChatHeader">
-        <view class="title">标题</view>
-        <view class="close" bindtap="hideChat">关闭</view>
+    <view class="mantisChatHeader" style="background:{{probeData.mbTitleColor}}">
+        <view class="headerL">
+            <image src="{{probeData.mbTitleLogoUrl}}" class="headerTitleImg" />
+            <view class="title" style="color:{{probeData.mbTitleTxtColor}}">{{probeData.mbTitleTxt}}</view>
+        </view>
+        <view class="headerR">
+            <image wx:if="{{!!mantisChat.chat.agentPhone && !probeData.callPhoneNumberFlag}}" data-phone="{{mantisChat.chat.agentPhone}}" bindtap="callPhone" class="telIcon" src="../utils/img/telIcon.png" />
+            <image bindtap="hideChat" wx:if="{{probeData.mbAllowClose}}" class="closeIcon" src="../utils/img/backBtn.png" />
+        </view>
     </view>
     <view class="mantisChatMain">
         <scroll-view
@@ -10,53 +16,186 @@
                 bindscrolltolower="lower"
                 bindscroll="scroll"
                 scroll-top="{{scrollTop}}"
+                scroll-with-animation="{{true}}"
                 class="chat_history"
         >
-            <view bindtap="callPhone">拨打电话</view>
-            <view class="hisMsg" wx:if="{{hasHistoryMsg}}">
+            <view class="hisMsgList" wx:if="{{!!hisMsgList.length}}">
                 <block>
 
                 </block>
             </view>
-            <view class="moreMsg" wx:if="{{hasHistoryMsg}}">
+            <view class="moreMsg" wx:if="{{!!hisMsgList.length}}">
                 <text>以上是历史消息</text>
             </view>
-            <view class="mbChatPromDiv">
+            <view class="mbChatPromDiv" wx:if="{{!!probeData.mbPromTxt}}">
                 <rich-text class='rich_span' nodes='{{probeData.mbPromTxt}}'></rich-text>
             </view>
             <block wx:for="{{msgList}}">
-                <view class="msgItem msgItemL" wx:if="{{(item.from || item.say_id) !== mantisChat.uid}}">
+                <view class="msgItem msgItemL" wx:if="{{item.say_from === 'A' && item.msgType !== 'F'}}">
                     <view class="msgItemTime">{{item.timeStr}}</view>
                     <view class="msgItemDown">
                         <image class="agentHead" mode="aspectFit"
-                               src="{{mantisChat.agent_msg_icon || 'https://chat-profile.oss-cn-hangzhou.aliyuncs.com/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg'}}"></image>
+                               src="{{mantisChat.chat.agent_msg_icon}}"></image>
                         <view class="msgCon">
-                            <rich-text nodes="{{item.msg}}" />
+                            <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg}}"/>
+                            <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg}}"/>
                         </view>
+                    </view>
+<!--                    复制微信号、电话咨询按钮-->
+                    <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
+                        <text wx:if="{{item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
+                        <text wx:if="{{item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
+                    </view>
+                    <!--选择性消息-->
+                    <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
+                        <block wx:for="{{item.choiceMsg.content}}" wx:for-item="choiceMsgItem">
+                            <view
+                                    class="choice-btn-item"
+                                    style="background:{{choiceMsgItem.bgColor || probeData.mbTitleColor || '#06CB94'}}"
+                                    data-btnId="{{choiceMsgItem.btnId}}"
+                                    data-label="{{choiceMsgItem.label}}"
+                                    data-msgid="{{item._id || item.msgId}}"
+                                    bindtap="sendChoiceMsg"
+                            >
+                                {{choiceMsgItem.label}}
+                            </view>
+                        </block>
                     </view>
                 </view>
-                <view class="msgItem msgItemR" wx:if="{{(item.from || item.say_id) === mantisChat.uid}}">
+                <view class="msgItem msgItemR" wx:if="{{item.say_from === 'V'}}">
                     <view class="msgItemTime">{{item.timeStr}}</view>
                     <view class="msgItemDown">
                         <view class="msgCon">
                             <rich-text nodes="{{item.msg}}" />
                         </view>
                         <image class="agentHead" mode="aspectFit"
-                               src="{{mantisChat.agent_msg_icon || 'https://chat-profile.oss-cn-hangzhou.aliyuncs.com/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg'}}"></image>
+                               src="../utils/img/studentDefaultHead.png"></image>
                     </view>
+                </view>
+                <!--评价结果-->
+                <view class="evaluate_result" wx:if="{{item.evaluationFlag === 'EVALUATE_RESULT'}}">
+                    <text>{{item.msg}}</text>
+                </view>
+                <!--表单消息-->
+                <view class="formMsg" wx:if="{{item.formData && item.is_submit !== 'Y'}}">
+                    <form catchsubmit="formMsgSubmit" data-msgid="{{item._id||item.msgId}}">
+                        <view class="formMsgTitle">
+                            {{item.formData.formTitle}}
+                        </view>
+                        <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
+                            <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" class="msgForm" />
+<!--                            <picker bindchange="bindPickerChange" range="{{formItem.fieldForm.option}}" name="picker" wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}" >-->
+<!--                                <view class="msgForm">-->
+<!--                                    当前选择：1-->
+<!--                                </view>-->
+<!--                            </picker>-->
+                        </view>
+                        <button
+                                type="primary"
+                                formType="submit"
+                                style="background:{{probeData.mbSndBtnColor}}"
+                                class="msgFormBtn"
+                        >
+                            {{item.formData.formSubmitBtnText}}
+                        </button>
+                    </form>
                 </view>
             </block>
         </scroll-view>
+        <!--评价窗口-->
+        <view class="evaluationModal" wx:if="{{isEvaluationModal}}">
+            <view class="evaluation_title">
+                请您对【<text>{{mantisChat.chat.agentName}}</text>】进行评价
+            </view>
+            <view class="evaluation_options">
+                <text bindtap="handleEvaluation" data-code="GOOD" class="item">满意</text>
+                <text bindtap="handleEvaluation" data-code="GENERAL" class="item">一般</text>
+                <text bindtap="handleEvaluation" data-code="POOR" class="item">不满意</text>
+            </view>
+        </view>
     </view>
     <view class="mantisFooter">
+        <view class="prompt" wx:if="{{!!promptText}}">{{promptText}}</view>
         <view class="mantisInputBox">
-            <view bindtap="chooseImage">图片</view>
-            <input class="mantisInput" auto-focus placeholder="请输入" bindinput="bindKeyInput" value="{{inputValue}}"/>
-            <button class="mantisSendBtn" bindtap="btnSendMsg">发送</button>
+<!--            <view bindtap="chooseImage">图片</view>-->
+            <input disabled="{{disabledInput}}" class="mantisInput" auto-focus placeholder="请输入" bindinput="bindKeyInput" value="{{inputValue}}"/>
+            <button bindtap="btnSendMsg" style="background:{{probeData.mbSndBtnColor}}" class="mantisSendBtn">发送</button>
         </view>
-        <view class="mantisVersion">技术咨询由螳螂科技提供</view>
+        <view class="mantisVersion" wx:if="{{!mantisChat.chat.isHiddenCopyright}}">技术咨询由螳螂科技提供</view>
     </view>
 </view>
-<view class="minimizeBox" style="display:{{isShowMantisChat?'none':'flex'}}" bindtap="_requestChat">
-    发起
+
+<!--留言内容-->
+<view class="leavingMessage" style="display:{{isShowLeave?'flex':'none'}}">
+    <view class="header" style="background:{{probeData.mbTitleColor}}">
+        <text>在线留言</text>
+        <view class="headerR">
+            <image class="telIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/tel.png" />
+            <image bindtap="hideLeave" class="closeIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/backBtn.png" />
+        </view>
+    </view>
+    <view class="main">
+        <view class="desc">您好，请填写以下信息，我们会尽快和您联系。</view>
+        <form catchsubmit="formSubmit">
+            <input class="leavingInput" name="username" placeholder="姓名" />
+            <input class="leavingInput" name="tel" placeholder="手机号" />
+            <textarea class="leavingInput leavingDesc" name="desc" placeholder="留言内容" />
+            <button type="primary" formType="submit" style="background:{{probeData.mbSndBtnColor}}" class="leavingBtn">提交留言</button>
+        </form>
+    </view>
 </view>
+
+<!--悬浮按钮-->
+<view
+        wx:if="{{probeData.mbIsShowMinimize}}"
+        class="minimizeBox"
+        style="display:{{isShowMinimizeBox?'flex':'none'}};background:{{probeData.mbBoxBgColor}};color:{{probeData.mbBoxFontColor}}"
+        bindtap="clickFloating"
+>
+    <text class="iconfont icon-fankuixinxi" wx:if="{{!mantisChatNew.unReadMsgNumber}}"></text>
+    <text class="minimizeNum" wx:if="{{mantisChatNew.unReadMsgNumber}}">{{mantisChatNew.unReadMsgNumber}}</text>
+</view>
+
+<!--提醒消息内容浮窗-->
+<view class="mantisMinimizeMsg" style="display:{{tipMsg?'block':'none'}}">
+    <view class="minimizeMsgTop">
+        <image class="minimizeGB" src="https://probe.bjmantis.net/chat/img/close.png" />
+        <image class="minimizeHeader" src="https://probe.bjmantis.net/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg" />
+        <text class="mantisNickname">{{mantisChat.chat.agentName}}</text>
+    </view>
+    <view class="minimizeMsgList" bindtap="clickFloating">
+        <text>{{tipMsg}}</text>
+    </view>
+</view>
+
+<!--邀请框-->
+<view class="mantisInvitation" style="display:{{isShowInvite?'block':'none'}}">
+    <image bindtap="hideInviteDiv" class="closeInviteIcon" src="../utils/img/closeInviteIcon.png" />
+    <image class="invitationImg" src="{{probeData.mbInviteUrl}}" />
+</view>
+
+<!--退出挽留-->
+<view class="mantisRetainMainM" wx:if="{{isShowRetain}}">
+    <view class="mantisRetainMainM_main">
+        <image src="../utils/img/retainCloseIcon.png" class="mantisCloseIconM" bindtap="mantisHiedRetain" />
+        <view class="mantisForm" wx:if="{{!isShowSubmitComplete}}">
+            <view class="mantisTitleM">{{probeData.stayConfig.title}}</view>
+            <view class="mantisContentDescM">{{probeData.stayConfig.contentDesc}}</view>
+            <form catchsubmit="retainSubmit" data-stayid="{{probeData.stayConfig.id}}">
+                <input bind:input="changeRetainPhone" class="mantisTel" name="phone" placeholder="请输入手机号" />
+                <view class="mantisTelCodeM" wx:if="{{probeData.stayConfig.isPhoneCode === 'Y'}}">
+                    <input class="mantisTel" name="phoneCode" placeholder="请输入验证码" />
+                    <text class="{{codeSending ? 'mantisGetCode codeSending' : 'mantisGetCode'}}" bindtap="sendCode">{{codeSending || '获取验证码'}}</text>
+                </view>
+                <button type="primary" formType="submit"  class="mantisBtnM" style="background:{{probeData.stayConfig.buttonText || '#06CB94'}}">{{probeData.stayConfig.buttonText}}</button>
+            </form>
+        </view>
+        <view class="mantisSubmitComplete" wx:if="{{isShowSubmitComplete}}">
+            <image class="completeIcon" src="../utils/img/completeIcon.png" />
+            <view class="mantisTitle">恭喜，您已经提交成功</view>
+            <view class="mantisContentDesc">工作人员会主动与您联系，发放资料，请耐心等待</view>
+            <view class="mantisBtn" bindtap="mantisHiedRetain">继续浏览</view>
+        </view>
+    </view>
+</view>
+

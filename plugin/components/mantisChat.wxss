@@ -22,18 +22,109 @@
     justify-content: space-between;
 }
 
-.mantisChatHeader .title {
-    margin-left: 20rpx;
+.mantisChatHeader .headerL {
+    display: flex;
+    align-items: center;
 }
 
-.mantisChatHeader .close {
+.mantisChatHeader .headerL .headerTitleImg {
+    width: 60rpx;
+    height: 60rpx;
+    margin-left: 30rpx;
+    border-radius: 50%;
+}
+
+.mantisChatHeader .headerL .title {
+    color: #FFFFFF;
+    font-size: 14px;
+    margin-left: 10px;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mantisChatHeader .headerR {
     margin-right: 20rpx;
+    display: flex;
+    align-items: center;
 }
 
+.mantisChatHeader .headerR .telIcon {
+    width: 40rpx;
+    height: 40rpx;
+}
+
+.mantisChatHeader .headerR .closeIcon {
+    width: 50rpx;
+    height: 50rpx;
+    margin-left: 12rpx;
+}
+
+/*--------聊窗内容区-----*/
 .mantisChatMain {
     flex: 1;
     background: #F5F8FA;
     overflow-y: auto;
+}
+
+/*--------评价-------*/
+.evaluationModal {
+    position: fixed;
+    width: 668rpx;
+    height: 252rpx;
+    background: #fff;
+    border-radius: 16rpx;
+    box-shadow: 0 12rpx 36rpx 0px rgba(0, 0, 0, 0.1);
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    z-index: 10;
+}
+
+.evaluation_title {
+    text-align: center;
+    padding: 40rpx 10rpx;
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #263443;
+}
+
+.evaluation_options {
+    overflow: hidden;
+    text-align: center;
+}
+
+.evaluation_options .item {
+    display: inline-block;
+    width: 160rpx;
+    height: 60rpx;
+    background: #f5f8fa;
+    border-radius: 32rpx;
+    font-size: 28rpx;
+    color: #263443;
+    text-align: center;
+    line-height: 60rpx;
+    cursor: pointer;
+    margin-right: 28rpx;
+}
+
+.evaluate_result {
+    margin: 20rpx 0;
+    text-align: center;
+}
+
+.evaluate_result text {
+    color: #7c7f82;
+    font-size: 24rpx;
+    background: rgba(0, 0, 0, 0.08);
+    display: inline-block;
+    height: 52rpx;
+    line-height: 52rpx;
+    padding: 0 30rpx;
+    border-radius: 52rpx;
 }
 
 .chat_history {
@@ -71,6 +162,22 @@
     display: flex;
 }
 
+.chat_history .msgItem .choice-btn-content {
+    padding-left: 50px;
+    overflow: hidden;
+    margin-top: 10px;
+    display: flex;
+}
+
+.chat_history .msgItem .choice-btn-content .choice-btn-item {
+    padding: 4rpx 24rpx;
+    border-radius: 16rpx;
+    color: #fff;
+    font-size: 24rpx;
+    margin-right: 20rpx;
+    margin-bottom: 20rpx;
+}
+
 .chat_history .msgItemR .msgItemDown {
     justify-content: flex-end;
 }
@@ -90,6 +197,7 @@
     padding: 20rpx;
     word-break: break-word;
     line-height: 20px;
+    max-width: calc(100% - 240rpx);
 }
 
 .chat_history .msgItemL .msgItemDown .msgCon {
@@ -103,9 +211,88 @@
     margin-left: 50rpx;
 }
 
+.msgItem .msg_btnBox {
+    margin-top: 20rpx;
+    margin-left: 100rpx;
+    display: flex;
+    width: 460rpx;
+    flex-wrap: wrap;
+}
 
+.msgItem .msg_btnBox > text {
+    min-width: 132rpx;
+    height: 50rpx;
+    border: 1px solid #347eff;
+    color: #347eff;
+    font-size: 24rpx;
+    background: #fff;
+    border-radius: 30rpx;
+    margin-right: 16rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20rpx;
+    margin-bottom: 20rpx;
+}
+
+/*------访客表单消息------*/
+.chat_history .formMsg {
+    background: #ffffff;
+    border-radius: 8rpx;
+    padding: 28rpx;
+    box-sizing: border-box;
+    margin: 20rpx 100rpx;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
+}
+
+.chat_history .formMsgTitle{
+    color: #3e464c;
+    font-size: 28rpx;
+    margin-bottom: 20rpx;
+    text-align: center;
+    line-height: 40rpx;
+}
+
+.chat_history .msgForm{
+    height: 64rpx;
+    opacity: 1;
+    background: #ffffff;
+    border: 1px solid #e0e9e8;
+    border-radius: 6rpx;
+    margin-top: 10rpx;
+    padding: 0 10rpx;
+    box-sizing: border-box;
+    outline: none;
+    font-size: 24rpx;
+    display: flex;
+    align-items: center;
+}
+
+.chat_history .msgFormBtn{
+    height: 64rpx;
+    background: #0095FF;
+    border-radius: 4rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24rpx;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 10rpx;
+}
+
+/*------底部------*/
 .mantisFooter {
     height: 180rpx;
+    position: relative;
+}
+
+.mantisFooter .prompt {
+    position: absolute;
+    bottom: 100%;
+    left: 20rpx;
+    font-size: 24rpx;
+    color: #999;
 }
 
 .mantisInputBox {
@@ -139,11 +326,112 @@
     color: #ccc;
 }
 
+/*-------留言表单----------*/
+.leavingMessage {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: 20%;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    z-index: 999999999;
+}
+
+.leavingMessage .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #06CB94;
+    border-radius: 16rpx 16rpx 0 0;
+    height: 100rpx;
+}
+
+.leavingMessage .header text {
+    font-size: 28rpx;
+    margin-left: 20rpx;
+    max-width: 480rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #fff;
+}
+
+.leavingMessage .header .headerR {
+    display: flex;
+    align-items: center;
+}
+
+.leavingMessage .header .closeIcon {
+    width: 50rpx;
+    height: 50rpx;
+    margin: 0 20rpx 0 12rpx;
+}
+
+.leavingMessage .header .telIcon {
+    width: 40rpx;
+    height: 40rpx;
+}
+
+.leavingMessage .main {
+    flex: 1;
+}
+
+.leavingMessage .main .desc {
+    font-size: 26rpx;
+    color: #5E676C;
+    text-align: center;
+    margin: 28px 0 40px 0;
+}
+
+.leavingMessage .main .leavingInput {
+    border-bottom: 1px solid #b7b7b7;
+    height: 64rpx;
+    margin-bottom: 30rpx;
+    padding-left: 20rpx;
+    font-size: 26rpx;
+}
+
+.leavingMessage .main .leavingDesc {
+    width: auto;
+}
+
+.leavingMessage .main .leavingBtn {
+    margin-top: 100rpx;
+    font-size: 28rpx;
+    background: #06CB94;
+    border-radius: 0;
+}
+
+
+/*-------悬浮按钮----------*/
+
+@font-face {
+    font-family: 'iconfont';
+    src: url('data:font/ttf;charset=utf-8;base64,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') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+.iconfont {
+    font-family: "iconfont" !important;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-fankuixinxi:before {
+    content: "\e660";
+    font-size: 60rpx;
+}
+
 .minimizeBox {
     color: #fff;
     background: #09c45c;
-    width: 120rpx;
-    height: 120rpx;
+    width: 100rpx;
+    height: 100rpx;
     position: fixed;
     right: 40rpx;
     bottom: 200rpx;
@@ -153,3 +441,232 @@
     justify-content: center;
     z-index: 99999999;
 }
+
+.minimizeBox .minimizeIcon {
+    font-size: 50rpx;
+}
+
+/*--------提醒消息内容浮窗------*/
+.mantisMinimizeMsg {
+    display: none;
+    position: fixed;
+    margin: auto;
+    right: 20rpx;
+    left: 20rpx;
+    bottom: 360rpx;
+    box-shadow: 0 0 20rpx rgba(0, 0, 0, .3);
+    border-radius: 6rpx;
+    background: rgba(255, 255, 255, .9);
+    padding: 16rpx;
+    z-index: 99998;
+    text-align: left;
+    line-height: initial;
+}
+
+.mantisMinimizeMsg .minimizeMsgTop {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.minimizeMsgTop .minimizeGB {
+    position: absolute;
+    right: 10rpx;
+    top: 14rpx;
+    width: 40rpx;
+    height: 40rpx;
+    text-align: center;
+    line-height: 40rpx;
+}
+
+.minimizeMsgTop .minimizeHeader {
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.minimizeMsgTop .mantisNickname {
+    font-size: 28rpx;
+    color: #333;
+    margin-left: 16rpx;
+    margin-right: 60rpx;
+    display: inline-block;
+    width: 600rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.minimizeMsgList {
+    color: #333;
+    line-height: 64rpx;
+    font-size: 28rpx;
+    font-weight: bold;
+    margin-top: 20rpx;
+}
+
+.minimizeMsgList p {
+    font-size: 24rpx;
+}
+
+/*--------邀请框--------*/
+
+.mantisInvitation {
+    position: fixed;
+    z-index: 999999999;
+    left: 80rpx;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.mantisInvitation .closeInviteIcon {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40rpx;
+    height: 40rpx;
+}
+
+.mantisInvitation .invitationImg {
+    width: 600rpx;
+}
+
+/*----------退出挽留---------*/
+.mantisRetainMainM {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, .3);
+    z-index: 999999999999;
+}
+
+.mantisRetainMainM .mantisRetainMainM_main {
+    width: 600rpx;
+    min-height: 450rpx;
+    background: #ffffff;
+    border-radius: 24rpx;
+    box-shadow: 0 16rpx 32px 0 rgba(0, 0, 0, .1);
+    text-align: center;
+    padding: 0 32rpx 60rpx 32rpx;
+    box-sizing: border-box;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    margin-left: -300rpx;
+    margin-top: -280rpx;
+}
+
+.mantisRetainMainM_main .mantisCloseIconM {
+    width: 24rpx;
+    height: 24rpx;
+    position: absolute;
+    top: 24rpx;
+    right: 24rpx;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTitleM {
+    font-size: 32rpx;
+    font-weight: 500;
+    color: #333333;
+    padding-top: 64rpx;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisContentDescM {
+    margin-top:  8rpx;
+    margin-bottom: 42rpx;
+    font-size: 24rpx;
+    color: #999;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTel {
+    height: 84rpx;
+    background: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 8rpx;
+    margin-bottom: 32rpx;
+    width: 536rpx;
+    padding: 0 16rpx;
+    box-sizing: border-box;
+    font-size: 26rpx;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTelCodeM {
+    position: relative;
+    margin-bottom: 40rpx;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTelCodeM .mantisTel {
+    margin: 0;
+    padding-right: 180rpx;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTelCodeM .mantisGetCode {
+    position: absolute;
+    right: 24rpx;
+    top: 22rpx;
+    font-size: 28rpx;
+    color: #06CB94;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisTelCodeM .codeSending {
+    color: #ccc;
+}
+
+.mantisRetainMainM_main .mantisForm .mantisBtnM {
+    height: 76rpx;
+    background: #06CB94;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28rpx;
+}
+
+.mantisSubmitComplete {
+    text-align: center;
+    padding: 0 28rpx;
+    box-sizing: border-box;
+}
+
+.mantisRetainMainM .mantisSubmitComplete .completeIcon {
+    width: 98rpx;
+    height: 98rpx;
+    margin: 80rpx 0 32rpx 0;
+}
+
+.mantisRetainMainM .mantisSubmitComplete .mantisTitle {
+    font-size: 32rpx;
+    color: #323233;
+    line-height: 52rpx;
+    margin-bottom: 8rpx;
+}
+
+.mantisRetainMainM .mantisSubmitComplete .mantisContentDesc {
+    font-size: 28rpx;
+    color: #999;
+    line-height: 40rpx;
+    margin-bottom: 32rpx;
+}
+
+.mantisRetainMainM .mantisSubmitComplete .mantisBtn {
+    width: 264rpx;
+    height: 76rpx;
+    border: 1px solid #dcdfe6;
+    border-radius: 8rpx;
+    font-size: 28rpx;
+    color: #323233;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+
+
+
+
+
+
+

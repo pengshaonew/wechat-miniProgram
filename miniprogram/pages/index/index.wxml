@@ -3,9 +3,12 @@
 <!--</navigator>-->
 
 <button bindtap="mantisRequestChat">发起会话</button>
+<block wx:for="{{[1,2,3,4,5,6,7,8,9,0]}}">
+    <view class="item">{{item}}</view>
+</block>
 <mantisChat
         id="mantisChat"
-        companyId="7011"
-        probeId="5ea96e4cdc4cec4b85b73e68"
+        companyId="3401"
+        probeId="60f6335542e6827c32c4d8bb"
         phone=""
 />

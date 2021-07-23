@@ -14,6 +14,9 @@ Page({
         //     data:"18234059274"
         // })
     },
+    onPageScroll (e) {
+        console.log('滚起来', wx.getSystemInfoSync().windowHeight);
+    },
     mantisRequestChat() {
         this.mantisChat._requestChat();
     }
