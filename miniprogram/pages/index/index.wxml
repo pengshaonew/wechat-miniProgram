@@ -11,5 +11,5 @@
         id="mantisChat"
         companyId="3401"
         probeId="60f6335542e6827c32c4d8bb"
-        phone=""
+        pageParam="{{params}}"
 />

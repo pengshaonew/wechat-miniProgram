@@ -41,15 +41,22 @@
 <!--
     companyId: 客户的公司id（必填）
     probeId: 探头id（必填）
-    uid: 可以传openId或UnionId 等唯一标识 （不必填）
-    phone：通过授权获取的访客手机号 （不必填）
+    pageParam: {object} 其他参数（必填）
+    
+    
+        object 对象有如下参数
+        
+        uid: 可以传openId或UnionId 等唯一标识 
+        phone：通过授权获取的访客手机号 
+        qz_gdt
+        gdt_vid
+        chatPageUrl: 小程序推广链接或探头"直达聊窗链接"（必填）
 -->
 <mantisChat 
         id="mantisChat"
         companyId="7011"
         probeId="5ea96e4cdc4cec4b85b73e68"
-        uid=""
-        phone=""
+        pageParam="{{object}}"
 />
 ```
 

@@ -111,6 +111,8 @@ let mantisCodeTimer = null;
 //退出挽留PC
 let retainRemainTimer = null;  //持续停留时间timer
 
+let ttlInterval = null;
+
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
 const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/ig;
 
@@ -185,6 +187,10 @@ Component({
         uid: {
             type: String,
             value: ''
+        },
+        pageParam:{
+            type: Object,
+            value:{}
         }
     },
     data: {
@@ -236,11 +242,11 @@ Component({
 
     lifetimes: {
         attached() {
+            console.log(245, this.data.pageParam);
             wx.setStorage({
                 key: 'companyId',
                 data: this.data.companyId
             });
-
             this.initParams();
             this.loadProbeData();
         }
@@ -309,10 +315,10 @@ Component({
                 isShowChat: false
             })
         },
-        // 隐藏留言
-        hideLeave() {
+        // 隐藏邀请框
+        showInviteDiv() {
             this.setData({
-                isShowLeave: false
+                isShowInvite: true
             })
         },
         // 隐藏邀请框
@@ -344,10 +350,10 @@ Component({
             this.triggerEvent('hideChat', myEventDetail, myEventOption)
         },
         initParams: function () {
+            const pageParam = this.data.pageParam;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.uid = this.handleUid(); // 获取uid
-            //TODO 设置chatPageUrl
-
+            mantisChatNew.chatPageUrl = pageParam.chatPageUrl + '&gdt_vid=' + (pageParam.gdt_vid || pageParam.qz_gdt);
             this.handleMantisChat(mantisChatNew);
         },
         _requestChat(params) {
@@ -362,7 +368,7 @@ Component({
             }
         },
         loadProbeData() {
-            const {serverUrl, companyId, probeId} = this.data;
+            const {serverUrl, companyId, probeId, mantisChat} = this.data;
             if (companyId && probeId) {
                 startTime = Date.now();
                 console.log(startTime);
@@ -376,9 +382,12 @@ Component({
                             this.setData({
                                 probeData: res.data,
                                 isShowMinimizeBox: res.data.mbIsShowMinimize
+                            },()=>{
+                                this.mantisSendPageInfo();
                             });
                             res.data.stayConfig && this.retainRules(res.data.stayConfig);
                             /^\d*$/.test(res.data.mbAutoChatDelay) && this.autoChat(res.data.mbAutoChatDelay);
+                            this.mantisSetupActiveTTl();
                         }
                         this.loadConfig();
                     },
@@ -626,7 +635,6 @@ Component({
                     siteId: '',
                     companyId: companyId,
                     buId: probeData.buId,
-                    stag: '',
                     // 如果采用指定客服分组的方式发起
                     sgId: probeData.defaultSvgId,
                     defaultSgId: probeData.defaultSvgId,
@@ -835,12 +843,11 @@ Component({
                 this.handleMantisChat(mantisChatNew);
             })
 
-            // TODO  咨询师离线 没进来
+            // 咨询师离线 没进来
             pomelo.on('ON_AGENT_LEAVE', data => {
                 console.log('咨询师离线');
                 const _this = this;
                 setTimeout(function () {
-                    // TODO location.reload();
                     let mantisChatNew = _this.data.mantisChat;
                     mantisChatNew.chat.connected = false;
                     _this.handleMantisChat(mantisChatNew);
@@ -1016,7 +1023,7 @@ Component({
                 this.resendMsg();
             })
 
-            // TODO 咨询师未匹配
+            // 咨询师未匹配
             pomelo.on('ON_NO_AGENT_MATCH', data => {
                 console.log('咨询师未匹配');
                 let mantisChatNew = {...this.data.mantisChat};
@@ -1154,33 +1161,20 @@ Component({
             })
         },
         getRequest: function () {
-            let pages = getCurrentPages();
-            let currPage = null;
-            if (pages.length) {
-                currPage = pages[pages.length - 1];
-            }
-            const {probeData, companyId} = this.data;
+            const {probeData, companyId, pageParam} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
-            // TODO 获取着陆页地址
-            mantisChatNew.lp = currPage && currPage.route || 'pages/index/index';
+            mantisChatNew.lp = pageParam.chatPageUrl;
             let req = mantisChatNew.request;
-            req.site_id = mantisChatNew.siteId;
-            req.stag = mantisChatNew.stag;
             req.page_title = mantisChatNew.page_title;
             req.req_mode = mantisChatNew.mode;
             req.req_ele = mantisChatNew.ele || "";
 
             // set landing page url
-            req.lp = mantisChatNew.lp;
+            req.lp = pageParam.chatPageUrl;
 
-            // set the request page url
-            if (!mantisChatNew.chatPageUrl) {
-                mantisChatNew.chatPageUrl = req.lp;
-            }
             req.url = encodeURI(mantisChatNew.chatPageUrl);
 
             // landing page id， 将来用来补全referer字符串
-            req.lp_id = mantisChatNew.lpId;
             req.vistor_id = mantisChatNew.uid;
             req.srv_gp_id = probeData.defaultSvgId;
             req.vistor_media = "mobile";
@@ -1188,7 +1182,7 @@ Component({
             req.buId = mantisChatNew.buId;
             req.trackId = mantisChatNew.trackId;
             req.assignedAgent = mantisChatNew.assignedAgent;
-            req.browser = mantisChatNew.browser;
+            req.browser = this.getDeviceInfo();
             //search word info
             req.cookieRefer = mantisChatNew.cookieRefer;
             try {
@@ -1206,7 +1200,6 @@ Component({
             req.brand = mantisChatNew.brand;
             req.chat_page_url = '';
             req.ctag = mantisChatNew.ctag;
-            req.mantisId = mantisChatNew.mantisId;
             req.probeId = mantisChatNew.uiPath;
             req.aifanfan = mantisChatNew.aifanfan;
             return req;
@@ -1223,7 +1216,6 @@ Component({
             }
             // 传入的uid
             if (!!passedInUid && passedInUid !== "undefined") {
-                // Cookies.set('mantis' + mantisChat.companyId, passedInUid, {expires: 1000});
                 wx.setStorage({
                     key: "mantis" + companyId,
                     data: passedInUid
@@ -1232,7 +1224,6 @@ Component({
             }
 
             // //优先从cookie中获取
-            // let id = Cookies.get('mantis' + mantisChat.companyId);
             let id = wx.getStorageSync('mantis' + companyId);
             if (!!id && id !== "undefined" && id.replace(/(^s*)|(s*$)/g, "").length > 0) {
                 // 如果是当前公司的访客
@@ -1243,7 +1234,6 @@ Component({
 
             // 需要生成uid
             let generateUid = this.mantisCreateGuid() + "@" + companyId;
-            // Cookies.set('mantis' + mantisChat.companyId, generateUid, {expires: 1000});
             wx.setStorage({
                 key: "mantis" + companyId,
                 data: generateUid
@@ -1270,7 +1260,6 @@ Component({
                     siteId: mantisChat.siteId,
                     companyId: probe.companyId,
                     buId: probe.buId,
-                    stag: mantisChat.stag,
                     // 如果采用指定客服分组的方式发起
                     sgId: probe.defaultSvgId,
                     defaultSgId: probe.defaultSvgId,
@@ -1761,16 +1750,12 @@ Component({
         showAgentKeyIn() {
             const _this = this;
             let promptStr = '对方正在输入.';
+            this.stopAgentKeyIn();
             agentKeyInInterval = setInterval(function () {
                 agentKeyInStep++;
                 if (agentKeyInStep >= 3) {
-                    _this.stopAgentKeyIn();
                     agentKeyInStep = 0;
-                    agentKeyInInterval = null;
-                    _this.setData({
-                        promptText: ''
-                    });
-                    return;
+                    promptStr = '对方正在输入';
                 }
                 promptStr += '.';
                 _this.setData({
@@ -1781,11 +1766,13 @@ Component({
                 _this.setData({
                     promptText: ''
                 });
+                _this.stopAgentKeyIn();
             }, 20 * 1000);
         },
         stopAgentKeyIn() {
             if (!!agentKeyInInterval) {
                 clearInterval(agentKeyInInterval);
+                agentKeyInInterval = null;
             }
         },
         // 收到咨询师消息后的处理逻辑
@@ -1885,7 +1872,9 @@ Component({
         },
         btnSendMsg: function () {
             const {inputValue} = this.data;
-            this.sendMessage(inputValue);
+            if(inputValue){
+                this.sendMessage(inputValue);
+            }
         },
         // 发送系统消息
         sendSystemMsg(msg, opt) {
@@ -1977,6 +1966,12 @@ Component({
                 msgId: msgid
             }))
         },
+        // 修改mantis
+        handleMantis: function (mantis) {
+            this.setData({
+                mantis
+            })
+        },
         // 修改mantisChat
         handleMantisChat: function (mantisChat) {
             this.setData({
@@ -2044,10 +2039,6 @@ Component({
             this.setData({
                 inputValue: value
             });
-            if (e.detail.keyCode === 13) {
-                e.preventDefault();
-                this.sendMessage(value);
-            }
         },
         callPhone: function (e) {
             let phone = e.target.dataset.phone;
@@ -2162,7 +2153,7 @@ Component({
                 }
             }
         },
-        //TODO 咨询师不在线留言数据提交
+        //咨询师不在线留言数据提交
         formSubmit(e) {
             console.log('form发生了submit事件，携带数据为：', e.detail.value);
             const {probeData, mantisChat, companyId, probeId} = this.data;
@@ -2175,7 +2166,6 @@ Component({
             resvInfo.buId = probeData.buId;
             resvInfo.companyId = companyId;
             resvInfo.ele = mantisChat.ele;
-            resvInfo.stag = mantisChat.paras.stag;
             resvInfo.pageUrl = mantisChat.paras.pageUrl || 'pages/index/index';
             resvInfo.referer = mantisChat.paras.referer;
             resvInfo.lpUrl = mantisChat.paras.lpUrl || 'pages/index/index';
@@ -2339,7 +2329,7 @@ Component({
                     }, triggerRemainTime * 1000)
                 }
                 if (mantisNew.triggerPageScroll) {
-                    // TODO  滚动触发
+                    // 滚动触发
                     // let scrollHeight = $(document).height() - $(window).height();
                     // let targetVal = (mantisNew.triggerPageScroll / 100 * scrollHeight).toFixed(0);
                     // if(scrollHeight > 200){
@@ -2398,17 +2388,18 @@ Component({
                 case 0:
                     mantisChatNew.paras.req_mode = "AUTO";
                     enterDuration = 0;
+                    _this.handleMantisChat(mantisChatNew);
                     _this._requestChat();
                     break;
                 default:
                     setTimeout(function () {
                         mantisChatNew.paras.req_mode = "AUTO";
                         enterDuration = autoChatDelay;
+                        _this.handleMantisChat(mantisChatNew);
                         _this._requestChat();
                     }, autoChatDelay * 1000);
                     break;
             }
-            this.handleMantisChat(mantisChatNew);
         },
         // 监听挽留手机号
         changeRetainPhone(e) {
@@ -2535,7 +2526,7 @@ Component({
                 index: e.detail.value
             })
         },
-        // TODO 表单留言
+        // 表单留言
         _sendPage(values, callbackSuccess, callbackFail) {
             if(!values.phone) return;
             const {probeId, companyId, probeData, mantisChat} = this.data;
@@ -2553,7 +2544,6 @@ Component({
             }
             paras.uid = wx.getStorageSync('mantis' + companyId);
             paras.siteId = site;
-            paras.stag = mantisChat.stag;
             //页面地址
             paras.pageUrl = 'pages/index/index';
 
@@ -2569,7 +2559,6 @@ Component({
 
             let en = {
                 'uid': paras.uid,
-                'stag': paras.stag,
                 'ele': '',
                 'siteId': paras.siteId,
                 'buId': probeData.buId,
@@ -2643,6 +2632,203 @@ Component({
                             icon: 'error'
                         });
                     }
+                }
+            });
+        },
+        // 轨迹
+        mantisSendPageInfo(){
+            const _this = this;
+            const {mantisChat, probeData,probeId, companyId, pageParam} = this.data;
+            let mantisNew = {...this.data.mantis};
+            if (!!mantisNew.e_id) {
+                console.warn("repeat!!");
+                return;
+            }
+            let isLpStr = "false";
+            if (mantisNew.isLandingPage) {
+                isLpStr = "true";
+            }
+
+
+            let en = {
+                uid: mantisChat.uid,
+                company: companyId,
+                buId: probeData.buId,
+                page_title: mantisNew.title || '',
+                url: 'pages/index/index',
+                media: "mobile",
+                browser: this.getDeviceInfo(),
+                is_lp: isLpStr,
+                lp: pageParam.chatPageUrl,
+                lp_calc: "REFER",
+                projectId: probeData.projectId,
+                pageparam: mantisNew.pageparam,
+                thirdUserId: mantisNew.userId,
+                thirdAccount: mantisNew.account,
+                probeId,
+                serviceGroupId: probeData.defaultSvgId
+            };
+
+            en.type = "E";
+            wx.request({
+                url: "https://tk" + probeData.chatServer + "/u/1.gif",
+                data: en,
+                method: 'GET',
+                success: data => {
+                    if (!data) {
+                        mantisNew.e_id = null;
+                        console.error("fail to save t, undefined!");
+                        _this.handleMantis(mantisNew);
+                        return;
+                    }
+                    //返回当前页面的轨迹的Id
+                    if (data.error) {
+                        mantisNew.e_id = null;
+                        console.error("fail to save t, error!");
+                        _this.handleMantis(mantisNew);
+                        return;
+                    }
+                    mantisNew.trackRetry = 0;
+
+                    //{trackId:r.insertedId, site_id:obj.siteId, ad:obj.referInfo.ad, plan:obj.plan, unit:obj.unit, subUnit:obj.subUnit, creative:obj.creative, url_mathced:true/false}
+                    mantisNew.e_id = this.mantisGetTrackId(data.trackId);
+                    // 访客_id
+                    mantisNew.v_id = data.v_id;
+                    _this.handleMantis(mantisNew);
+                    // 如果返回url匹配到着陆页
+                    if (data.lp_calc) {
+
+                        if (data.lp_calc === "FIRST_VISIT") {
+                            //set current page as landing page even its not from adv, 但是不保存cookie
+                            mantisNew.isLandingPage = true;
+                            mantisNew.lp_calc = data.lp_calc;
+                            mantisNew.parsedRefer = {};
+                            mantisNew.siteId = null;
+                            _this.handleMantis(mantisNew);
+                        }
+
+                        // 当发现存在机器人的活跃对话，如果配置了自动发起，则忽略等待自动发起，否则6秒自动拉起对话
+                        if(!!data.hasChat) {
+                            let autoChatDelay = mantisNew.chat.autoChatDelay;
+                            if (typeof(mantisNew.chat.autoChatDelay) === "undefined") {
+                                autoChatDelay = -1;
+                            }
+
+                            if (isNaN(mantisNew.chat.autoChatDelay)) {
+                                autoChatDelay = -1;
+                            }
+
+                            if (autoChatDelay === -1) {
+                                setTimeout(function () {
+                                    if(mantisNew.chat.hasChat) {
+                                        return;
+                                    }
+                                    mantisNew.req_mode = "AUTO";
+                                    _this.handleMantis(mantisNew);
+                                    _this._requestChat();
+                                }, 6000);
+                            }
+                        }
+                    }
+                },
+                fail: () => {
+                    // TODO 如果发送失败重试3次
+                }
+            });
+        },
+        mantisGetTrackId(data){
+            if (!data) {
+                return "";
+            }
+
+            if (data.trackId) {
+                return data.trackId;
+            }
+
+            return data;
+        },
+        mantisSetupActiveTTl(){
+            const _this = this;
+            if (!!ttlInterval) {
+                clearInterval(ttlInterval);
+            }
+            ttlInterval = setInterval(function () {
+                _this.mantisSendAlive("focus_ttl");
+            }, 15000);
+        },
+        // 发送ttl
+        mantisSendAlive(why){
+            const {mantis, mantisChat, probeData, companyId} = this.data;
+            let liveInfo = {};
+            liveInfo.type = "L";
+            liveInfo.e_id = mantisChat.e_id;
+
+            if(!beginTime) {
+                beginTime = new Date().getTime();
+            }
+            liveInfo.ttl = Math.floor((new Date().getTime() - beginTime) / 1000);
+            if(liveInfo.ttl <= 0) {
+                return;
+            }
+            beginTime = new Date().getTime();
+            liveInfo.company = companyId;
+            liveInfo.buId = probeData.buId;
+            liveInfo.serviceGroupId = probeData.defaultSvgId;
+            liveInfo.uid = mantisChat.uid;
+            liveInfo.defaultSg = probeData.defaultSvgId;
+            liveInfo.why = why;
+            liveInfo.v_id = probeData.v_id;
+
+            // 是否是聊天模式
+            liveInfo.mode = "no";
+            wx.request({
+                url: "https://tk" + probeData.chatServer + "/u/1.gif",
+                data: liveInfo,
+                method: 'GET',
+                success: data => {
+                    if (!data) {
+                        // console.debug("no response return");
+                        return;
+                    }
+
+                    // 强聊
+                    let hasForce = data["hasForce"];
+                    if (!!hasForce) {
+                        let forceInfo = data["force"];
+                        // console.debug("forceInfo found:", forceInfo);
+                        if (!!forceInfo) {
+                            this._requestChat();
+                            return;
+                        }
+                    }
+
+                    // 邀请信息
+                    let hasInvite = data["hasInvite"];
+                    if (!!hasInvite) {
+                        let inviteInfoStr = data["invite"];
+                        try {
+                            let inviteInfo = JSON.parse(inviteInfoStr);
+                            // console.debug("invite found:", inviteInfo);
+                            if (!!inviteInfo) {
+                                this.showInviteDiv();
+                            }
+
+                        } catch (e) {
+                            console.error("fail to parse the invite info", inviteInfoStr);
+                        }
+                    }
+
+                    let latestMsg = data["latestMsg"];
+                    try {
+                        // if (latestMsg && onMantisMsgArrive) {
+                        //     onMantisMsgArrive(latestMsg);
+                        // }
+                    } catch (e) {
+
+                    }
+                },
+                fail: () => {
+                    console.error("Post TTL information error-sendClick");
                 }
             });
         },
