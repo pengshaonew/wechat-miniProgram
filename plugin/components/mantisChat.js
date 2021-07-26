@@ -2514,10 +2514,9 @@ Component({
                             this.sendMessage(phone, 'R_S');
                         } else {
                             //  如果没有发起会话则数据进入留言查询
-                            this.sendPage({
+                            this._sendPage({
                                 phone
-                            }, () => {
-                            });
+                            }, () => {});
                         }
                     }
                 },
@@ -2537,7 +2536,8 @@ Component({
             })
         },
         // TODO 表单留言
-        sendPage(values, callbackSuccess, callbackFail) {
+        _sendPage(values, callbackSuccess, callbackFail) {
+            if(!values.phone) return;
             const {probeId, companyId, probeData, mantisChat} = this.data;
             let paras = {};
             const url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
@@ -2578,7 +2578,7 @@ Component({
                 'pageUrl': paras.pageUrl,
                 'projectId': paras.projectId,
                 "referer": mantisChat.referer,
-                "lpUrl": mantisChat.landPageUrl,
+                "lpUrl": paras.pageUrl,
                 "reqVistorMedia": "mobile",
                 "reqSearchWd": '',
                 "reqAd": '',
@@ -2619,7 +2619,7 @@ Component({
                                 callbackSuccess()
                             } else {
                                 wx.showToast({
-                                    title: '留言成功，请耐心等待通知'
+                                    title: '留言成功'
                                 });
                             }
                         } else {

@@ -19,5 +19,10 @@ Page({
     },
     mantisRequestChat() {
         this.mantisChat._requestChat();
+    },
+    handleSubmit(){
+        this.mantisChat._sendPage({
+            phone:13123123123
+        });
     }
 })
