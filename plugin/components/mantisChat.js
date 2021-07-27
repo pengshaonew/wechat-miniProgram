@@ -188,9 +188,9 @@ Component({
             type: String,
             value: ''
         },
-        pageParam:{
+        pageParam: {
             type: Object,
-            value:{}
+            value: {}
         }
     },
     data: {
@@ -228,7 +228,8 @@ Component({
             unReadMsgNumber: 0, // 未读的咨询师消息数
             request: {},
             paras: {}
-        }
+        },
+        scrollBottomId: ''
     },
     observers: {
         'phone': function (phone) {
@@ -242,10 +243,14 @@ Component({
 
     lifetimes: {
         attached() {
+            this.messageAudio = wx.createInnerAudioContext({
+                useWebAudioImplement: true
+            });
+            this.messageAudio.src = 'https://probe.bjmantis.net/chat/13203.mp3';
             const {pageParam, companyId} = this.data;
-            if(pageParam){
+            if (pageParam) {
                 this.setData({
-                    pageParam:{}
+                    pageParam: {}
                 })
             }
             wx.setStorage({
@@ -367,7 +372,7 @@ Component({
             const {serverUrl, companyId, probeId, mantisChat} = this.data;
             if (companyId && probeId) {
                 startTime = Date.now();
-                console.log(startTime);
+                console.log('探头请开始', startTime);
                 wx.request({
                     url: serverUrl + companyId + '/' + probeId + '.json?' + Date.now(),
                     data: {},
@@ -378,7 +383,7 @@ Component({
                             this.setData({
                                 probeData: res.data,
                                 isShowMinimizeBox: res.data.mbIsShowMinimize
-                            },()=>{
+                            }, () => {
                                 this.mantisSendPageInfo();
                             });
                             res.data.stayConfig && this.retainRules(res.data.stayConfig);
@@ -611,7 +616,7 @@ Component({
         queryEntry: function (callback) {
             let _this = this;
             let route = 'gateMini.gateMiniHandler.queryCustomerEntry';
-            const {probeData, mantisChat, companyId,pageParam} = this.data;
+            const {probeData, mantisChat, companyId, pageParam} = this.data;
             let port = ports[this.handleRandom(0, 1)];
             pomelo.init({
                 host: probeData.chatServer,
@@ -857,6 +862,7 @@ Component({
                     mantisChatNew.mantisTtimeDifference = data.serverTime - Date.now();
                 }
                 let mms = msgs.reverse();
+                let msgId = '';
                 for (let i = 0; i < mms.length; i++) {
                     let f = mms[i];
                     if (f.autoFlag === 'V') {
@@ -904,13 +910,6 @@ Component({
                         }
                     }
                     msgListNew.push(f);
-                    this.setData({
-                        msgList: msgListNew
-                    }, () => {
-                        this.scrollDown();
-                    })
-
-
                     if (f.isWelcome) {
                         mantisChatNew.chat.welcomeMsgCount++;
                     } else {
@@ -934,7 +933,13 @@ Component({
                             }
                         }
                     }
+                    msgId = f._id || f.msgId;
                 }
+                this.setData({
+                    msgList: msgListNew
+                }, () => {
+                    this.scrollDown(null, msgId);
+                })
                 if (mms.length) {
                     let hisLastMsg = mms[mms.length - 1];
                     if (hisLastMsg.say_from === 'V') {
@@ -970,6 +975,7 @@ Component({
                     return;
                 }
                 let mms = msgs;
+                let msgId = '';
                 for (let i = 0; i < mms.length; i++) {
                     let f = mms[i];
                     if (f.evaluationFlag === 'EVALUATE_RESULT') {
@@ -1006,7 +1012,9 @@ Component({
                 }
                 this.setData({
                     hisMsgList: hisMsgListNew
-                })
+                }, () => {
+                    this.scrollDown(null, msgId);
+                });
                 this.resendMsg();
             })
 
@@ -1040,6 +1048,7 @@ Component({
 
             // 对话发起成功
             pomelo.on('ON_CHANNEL_OK', data => {
+
                 const _this = this;
                 const {parentParams} = this.data;
                 let mantisChatNew = {...this.data.mantisChat};
@@ -1535,12 +1544,18 @@ Component({
                 });
             }
         },
-        scrollDown(time) {
-            setTimeout(() => {
+        scrollDown(time, id) {
+            if (id) {
                 this.setData({
-                    scrollTop: 999999
+                    scrollBottomId: 'id_' + id
                 })
-            }, time || 0);
+            } else {
+                setTimeout(() => {
+                    this.setData({
+                        scrollTop: 999999
+                    })
+                }, time || 300);
+            }
         },
         // 清理历史聊天信息
         clearHisMsg() {
@@ -1560,7 +1575,7 @@ Component({
             entryInfo.pageUrl = mantisChat.chatPageUrl;
             entryInfo.projectId = probeData.projectId;
             entryInfo.reason = reason;
-            let url = "https://" + probeData.chatServer  + "/" + companyId + "/api-war/message/addEntryInfo.do";
+            let url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/message/addEntryInfo.do";
             wx.request({
                 url,
                 data: entryInfo,
@@ -1781,8 +1796,8 @@ Component({
         },
         // 收到咨询师消息后的处理逻辑
         onMessageArrive(msg) {
-            const {mantisChat, isShowChat} = this.data;
-            let notifyMethod = mantisChat.chat.mbMsgNotifyMethod || "vibrate";
+            const {mantisChat, isShowChat, probeData} = this.data;
+            let notifyMethod = probeData.mbMsgNotifyMethod || "vibrate";
             if (notifyMethod === "vibrate") {
                 this.vibrate();
             } else {
@@ -1870,13 +1885,13 @@ Component({
         vibrate() {
             wx.vibrateShort({type: 'medium'});
         },
-        // TODO  声音提醒
+        // 声音提醒
         playSound() {
-
+            this.messageAudio.play();
         },
         btnSendMsg: function () {
             const {inputValue} = this.data;
-            if(inputValue){
+            if (inputValue) {
                 this.sendMessage(inputValue);
             }
         },
@@ -2511,7 +2526,8 @@ Component({
                             //  如果没有发起会话则数据进入留言查询
                             this._sendPage({
                                 phone
-                            }, () => {});
+                            }, () => {
+                            });
                         }
                     }
                 },
@@ -2532,7 +2548,7 @@ Component({
         },
         // 表单留言
         _sendPage(values, callbackSuccess, callbackFail) {
-            if(!values.phone) return;
+            if (!values.phone) return;
             const {probeId, companyId, probeData, mantisChat} = this.data;
             let paras = {};
             const url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
@@ -2640,9 +2656,9 @@ Component({
             });
         },
         // 轨迹
-        mantisSendPageInfo(){
+        mantisSendPageInfo() {
             const _this = this;
-            const {mantisChat, probeData,probeId, companyId, pageParam} = this.data;
+            const {mantisChat, probeData, probeId, companyId} = this.data;
             let mantisNew = {...this.data.mantis};
             if (!!mantisNew.e_id) {
                 console.warn("repeat!!");
@@ -2701,7 +2717,6 @@ Component({
                     _this.handleMantis(mantisNew);
                     // 如果返回url匹配到着陆页
                     if (data.lp_calc) {
-
                         if (data.lp_calc === "FIRST_VISIT") {
                             //set current page as landing page even its not from adv, 但是不保存cookie
                             mantisNew.isLandingPage = true;
@@ -2712,9 +2727,9 @@ Component({
                         }
 
                         // 当发现存在机器人的活跃对话，如果配置了自动发起，则忽略等待自动发起，否则6秒自动拉起对话
-                        if(!!data.hasChat) {
+                        if (!!data.hasChat) {
                             let autoChatDelay = mantisNew.chat.autoChatDelay;
-                            if (typeof(mantisNew.chat.autoChatDelay) === "undefined") {
+                            if (typeof (mantisNew.chat.autoChatDelay) === "undefined") {
                                 autoChatDelay = -1;
                             }
 
@@ -2724,7 +2739,7 @@ Component({
 
                             if (autoChatDelay === -1) {
                                 setTimeout(function () {
-                                    if(mantisNew.chat.hasChat) {
+                                    if (mantisNew.chat.hasChat) {
                                         return;
                                     }
                                     mantisNew.req_mode = "AUTO";
@@ -2736,11 +2751,20 @@ Component({
                     }
                 },
                 fail: () => {
-                    // TODO 如果发送失败重试3次
+                    // 如果发送失败重试3次
+                    if (mantisNew.trackRetry < 3) {    // 如果发送失败重试3次
+                        setTimeout(function () {
+                            mantisNew.trackRetry++;
+                            _this.handleMantis(mantisNew);
+                            _this.mantisSendPageInfo();
+                        }, 500)
+                    } else {
+                        console.error("fail to save t");
+                    }
                 }
             });
         },
-        mantisGetTrackId(data){
+        mantisGetTrackId(data) {
             if (!data) {
                 return "";
             }
@@ -2751,7 +2775,7 @@ Component({
 
             return data;
         },
-        mantisSetupActiveTTl(){
+        mantisSetupActiveTTl() {
             const _this = this;
             if (!!ttlInterval) {
                 clearInterval(ttlInterval);
@@ -2761,17 +2785,17 @@ Component({
             }, 15000);
         },
         // 发送ttl
-        mantisSendAlive(why){
-            const { mantisChat, probeData, companyId} = this.data;
+        mantisSendAlive(why) {
+            const {mantisChat, probeData, companyId} = this.data;
             let liveInfo = {};
             liveInfo.type = "L";
             liveInfo.e_id = mantisChat.e_id;
 
-            if(!beginTime) {
+            if (!beginTime) {
                 beginTime = new Date().getTime();
             }
             liveInfo.ttl = Math.floor((new Date().getTime() - beginTime) / 1000);
-            if(liveInfo.ttl <= 0) {
+            if (liveInfo.ttl <= 0) {
                 return;
             }
             beginTime = new Date().getTime();

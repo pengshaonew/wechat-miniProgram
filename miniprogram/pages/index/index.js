@@ -12,6 +12,8 @@ Page({
     },
     onReady() {
         this.mantisChat = this.selectComponent('#mantisChat');
+        this.messageAudio = wx.createAudioContext('message');
+        this.messageAudio.setSrc('https://probe.bjmantis.net/chat/13203.mp3');
         // wx.setStorage({
         //     key:"mantisTel",
         //     data:"18234059274"
@@ -27,5 +29,8 @@ Page({
         this.mantisChat._sendPage({
             phone: 13123123123
         });
+    },
+    audioPlay(){
+        this.messageAudio.play();
     }
 })
