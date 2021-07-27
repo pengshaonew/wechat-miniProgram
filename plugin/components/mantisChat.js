@@ -242,10 +242,15 @@ Component({
 
     lifetimes: {
         attached() {
-            console.log(245, this.data.pageParam);
+            const {pageParam, companyId} = this.data;
+            if(pageParam){
+                this.setData({
+                    pageParam:{}
+                })
+            }
             wx.setStorage({
                 key: 'companyId',
-                data: this.data.companyId
+                data: companyId
             });
             this.initParams();
             this.loadProbeData();
@@ -328,10 +333,11 @@ Component({
             })
         },
         // 显示留言页
-        showResvDiv() {
+        showResvDiv(reason) {
             this.setData({
                 isShowLeave: true
-            })
+            });
+            this.sendEntry(reason);
         },
         // 隐藏留言
         hideResvDiv() {
@@ -339,20 +345,10 @@ Component({
                 leavingMessage: false
             })
         },
-        _showChat() {
-            const myEventDetail = {} // detail对象，提供给事件监听函数
-            const myEventOption = {} // 触发事件的选项
-            this.triggerEvent('showChat', myEventDetail, myEventOption)
-        },
-        _hideChat() {
-            const myEventDetail = {} // detail对象，提供给事件监听函数
-            const myEventOption = {} // 触发事件的选项
-            this.triggerEvent('hideChat', myEventDetail, myEventOption)
-        },
         initParams: function () {
-            const pageParam = this.data.pageParam;
+            const {pageParam, uid} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
-            mantisChatNew.uid = this.handleUid(); // 获取uid
+            mantisChatNew.uid = uid || this.handleUid(); // 获取uid
             mantisChatNew.chatPageUrl = pageParam.chatPageUrl + '&gdt_vid=' + (pageParam.gdt_vid || pageParam.qz_gdt);
             this.handleMantisChat(mantisChatNew);
         },
@@ -518,7 +514,6 @@ Component({
 
             this.handleMantisChat(mantisChatNew);
             this.mergeProbeSetting();
-            this.setUI(mantisChatNew.chat);
         },
         mergeProbeSetting() {
             const {probeData} = this.data;
@@ -613,18 +608,10 @@ Component({
             mantisChatNew.chat.mbAutoIframeHeight = probeData.mbAutoIframeHeight;
             this.handleMantisChat(mantisChatNew);
         },
-        setUI(conf) {
-            // $("#MANTIS_RESV_OK_MSG").val(conf.resv_ok_msg);
-            // $("#MANTIS_RESV_ERR_MSG").val(conf.resv_error_msg);
-            // $("#MANTIS_CHAT_WEL_MSG").val(conf.chat_alloc_msg);
-
-            //TODO 移动端消息是否置顶 true 置顶显示  conf.topShowMsg
-
-        },
         queryEntry: function (callback) {
             let _this = this;
             let route = 'gateMini.gateMiniHandler.queryCustomerEntry';
-            const {probeData, mantisChat, companyId} = this.data;
+            const {probeData, mantisChat, companyId,pageParam} = this.data;
             let port = ports[this.handleRandom(0, 1)];
             pomelo.init({
                 host: probeData.chatServer,
@@ -647,9 +634,9 @@ Component({
                     lpRequestDuration: 0,
                     welcome: {},
                     xst: '',
-                    pageparam: undefined,
-                    thirdAccount: undefined,
-                    thirdUid: undefined,
+                    pageparam: pageParam.pageParam,
+                    thirdAccount: pageParam.account,
+                    thirdUid: pageParam.userId,
                     promotionMsg: '',
                     searchWordMessage: 'searchWordMessage'
                 }, data => {
@@ -838,7 +825,7 @@ Component({
                 this.clearRobotAutoMsgTmr();
 
                 if (pomeloErrorCount >= POMELO_ERROR_LIMIT) {
-                    this.showResvDiv(true, "on_error");
+                    this.showResvDiv("on_error");
                 }
                 this.handleMantisChat(mantisChatNew);
             })
@@ -1031,7 +1018,7 @@ Component({
                 mantisChatNew.chat.isConnecting = false;
                 this.handleMantisChat(mantisChatNew);
                 console.warn("NO_AGENT_AVAILABLE");
-                this.showResvDiv(true, "no_agent");
+                this.showResvDiv("no_agent");
                 //清除用户输入提醒任务
                 clearInterval(reminderTmr);
                 clearInterval(agentTimedTimer);
@@ -1163,14 +1150,14 @@ Component({
         getRequest: function () {
             const {probeData, companyId, pageParam} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
-            mantisChatNew.lp = pageParam.chatPageUrl;
+            mantisChatNew.lp = mantisChatNew.chatPageUrl;
             let req = mantisChatNew.request;
             req.page_title = mantisChatNew.page_title;
             req.req_mode = mantisChatNew.mode;
             req.req_ele = mantisChatNew.ele || "";
 
             // set landing page url
-            req.lp = pageParam.chatPageUrl;
+            req.lp = mantisChatNew.chatPageUrl;
 
             req.url = encodeURI(mantisChatNew.chatPageUrl);
 
@@ -1562,12 +1549,29 @@ Component({
                 msgList: []
             })
         },
-        // TODO 发起失败后进入留言
-        handleLeaveMsg() {
-            // initResv();
+        //  记录进入留言表单
+        sendEntry(reason) {
+            const {mantis, mantisChat, probeData, companyId} = this.data;
+            let entryInfo = {};
+            entryInfo.uid = mantisChat.uid;
+            entryInfo.buId = probeData.buId;
+            entryInfo.ele = mantis.ele;
+            entryInfo.companyId = companyId;
+            entryInfo.pageUrl = mantisChat.chatPageUrl;
+            entryInfo.projectId = probeData.projectId;
+            entryInfo.reason = reason;
+            let url = "https://" + probeData.chatServer  + "/" + companyId + "/api-war/message/addEntryInfo.do";
+            wx.request({
+                url,
+                data: entryInfo,
+                method: 'POST',
+                success: res => {
 
-            // TODO 发起失败原因发送到后台
-            // sendEntry(reason);
+                },
+                fail: () => {
+                    console.error("fail to save the leave page info");
+                }
+            });
         },
         // 咨询师指定时长未回复时,给学员随机发送设置好的回复语句
         setAgentTimedTimer() {
@@ -1837,7 +1841,7 @@ Component({
             }
         },
         msgResend(msg, msgType) {
-            const {companyId} = this.data;
+            const {companyId, probeData} = this.data;
             pomelo.request("chat.chatHandler.customerSend", {
                 //消息接口
                 content: msg,
@@ -1846,7 +1850,7 @@ Component({
                 agentId: mantisChat.chat.agent.agentId,
                 target: "",
                 type: "text",
-                projectId: mantisChat.paras.projectId,
+                projectId: probeData.projectId,
                 companyId,
                 channelId: mantisChat.chat.channelId,
                 msgType: msgType
@@ -2545,7 +2549,7 @@ Component({
             paras.uid = wx.getStorageSync('mantis' + companyId);
             paras.siteId = site;
             //页面地址
-            paras.pageUrl = 'pages/index/index';
+            paras.pageUrl = mantisChat.chatPageUrl;
 
             if (!!otherParams.csProjectId) {
                 paras.projectId = otherParams.csProjectId;
@@ -2655,11 +2659,11 @@ Component({
                 company: companyId,
                 buId: probeData.buId,
                 page_title: mantisNew.title || '',
-                url: 'pages/index/index',
+                url: mantisNew.chatPageUrl,
                 media: "mobile",
                 browser: this.getDeviceInfo(),
                 is_lp: isLpStr,
-                lp: pageParam.chatPageUrl,
+                lp: mantisChat.chatPageUrl,
                 lp_calc: "REFER",
                 projectId: probeData.projectId,
                 pageparam: mantisNew.pageparam,
@@ -2758,7 +2762,7 @@ Component({
         },
         // 发送ttl
         mantisSendAlive(why){
-            const {mantis, mantisChat, probeData, companyId} = this.data;
+            const { mantisChat, probeData, companyId} = this.data;
             let liveInfo = {};
             liveInfo.type = "L";
             liveInfo.e_id = mantisChat.e_id;

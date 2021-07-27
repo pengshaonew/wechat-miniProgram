@@ -3,13 +3,13 @@
 <!--</navigator>-->
 
 <button bindtap="mantisRequestChat">发起会话</button>
-<button bindtap="handleSubmit">留言</button>
+<button bindtap="handleSubmit">表单留言</button>
 <block wx:for="{{[1,2,3,4,5,6,7,8,9,0]}}">
     <view class="item">{{item}}</view>
 </block>
 <mantisChat
         id="mantisChat"
-        companyId="3401"
-        probeId="60f6335542e6827c32c4d8bb"
-        pageParam="{{params}}"
+        companyId="3403"
+        probeId="60ff7b7942e6824c77cf5c70"
+        pageParam="{{param}}"
 />

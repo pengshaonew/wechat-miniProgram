@@ -35,7 +35,7 @@
                     <view class="msgItemTime">{{item.timeStr}}</view>
                     <view class="msgItemDown">
                         <image class="agentHead" mode="aspectFit"
-                               src="{{mantisChat.chat.agent_msg_icon}}"></image>
+                               src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}"></image>
                         <view class="msgCon">
                             <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg}}"/>
                             <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg}}"/>
@@ -130,8 +130,8 @@
     <view class="header" style="background:{{probeData.mbTitleColor}}">
         <text>在线留言</text>
         <view class="headerR">
-            <image wx:if="{{!!mantisChat.chat.agentPhone && !probeData.callPhoneNumberFlag}}" data-phone="{{mantisChat.chat.agentPhone}}" bindtap="callPhone" class="telIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/tel.png" />
-            <image wx:if="{{probeData.mbAllowClose}}" bindtap="hideLeave" class="closeIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/backBtn.png" />
+<!--            <image wx:if="{{!!mantisChat.chat.agentPhone && !probeData.callPhoneNumberFlag}}" data-phone="{{mantisChat.chat.agentPhone}}" bindtap="callPhone" class="telIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/tel.png" />-->
+            <image wx:if="{{probeData.mbAllowClose}}" bindtap="hideResvDiv" class="closeIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/backBtn.png" />
         </view>
     </view>
     <view class="main" wx:if="{{!completeText}}">

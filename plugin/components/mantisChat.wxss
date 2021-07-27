@@ -66,6 +66,7 @@
     flex: 1;
     background: #F5F8FA;
     overflow-y: auto;
+    position: relative;
 }
 
 /*--------评价-------*/
@@ -130,6 +131,11 @@
 .chat_history {
     padding: 20rpx 0;
     height: 100%;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
 }
 
 .chat_history .moreMsg {

@@ -1,4 +1,4 @@
-# 螳螂客服
+# 螳螂客服SDK
 
 ### 引入插件代码包
 
@@ -9,7 +9,7 @@
 {
     "plugins": {
         "mantisChat": {
-            "version": "dev",
+            "version": "1.0.0",
             "provider": "wxc6e2bf2f6fc2e53a"
         }
     }
@@ -30,36 +30,6 @@
 }
 ```
 
-- wxml文件
-
-```html
-<!--
-    发起会话调用方法 bindtap="mantisRequestChat"
--->
-<!--<button bindtap="mantisRequestChat">发起会话</button>-->
-
-<!--
-    companyId: 客户的公司id（必填）
-    probeId: 探头id（必填）
-    pageParam: {object} 其他参数（必填）
-    
-    
-        object 对象有如下参数
-        
-        uid: 可以传openId或UnionId 等唯一标识 
-        phone：通过授权获取的访客手机号 
-        qz_gdt
-        gdt_vid
-        chatPageUrl: 小程序推广链接或探头"直达聊窗链接"（必填）
--->
-<mantisChat 
-        id="mantisChat"
-        companyId="7011"
-        probeId="5ea96e4cdc4cec4b85b73e68"
-        pageParam="{{object}}"
-/>
-```
-
 - js文件
 
 ```javascript
@@ -74,6 +44,38 @@
 
 ```
 
+- wxml文件
+
+```html
+<!--
+    发起会话调用方法 bindtap="mantisRequestChat"
+-->
+<button bindtap="mantisRequestChat">发起会话</button>
+
+<!--
+    companyId: 客户的公司id（必填）
+    probeId: 探头id（必填）
+    serverUrl: 探头请求域名（不必填）
+    uid: 可以传openId或UnionId 等唯一标识 
+    phone：通过授权获取的访客手机号 
+    pageParam: {object} 其他参数（必填）
+    
+        object 对象有如下参数
+        
+        qz_gdt
+        gdt_vid
+        chatPageUrl  小程序推广链接或探头"直达聊窗链接"（必填）
+        account
+        userId
+        pageParam 页面埋码参数
+-->
+<mantisChat 
+        id="mantisChat"
+        companyId="7011"
+        probeId="5ea96e4cdc4cec4b85b73e68"
+        pageParam="{{object}}"
+/>
+```
 
 
 
