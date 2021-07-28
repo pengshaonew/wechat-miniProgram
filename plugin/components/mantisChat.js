@@ -188,6 +188,10 @@ Component({
             type: String,
             value: ''
         },
+        chatPageUrl: {
+            type: String,
+            value: ''
+        },
         pageParam: {
             type: Object,
             value: {}
@@ -233,10 +237,9 @@ Component({
     },
     observers: {
         'phone': function (phone) {
-            if (phone) {
-                if (mantisChat.chat.connected && phone) {
-                    this.sendMessage(phone);
-                }
+            const mantisChat = this.data.mantisChat;
+            if (phone && mantisChat.chat.connected) {
+                this.sendMessage(phone);
             }
         }
     },
@@ -268,7 +271,7 @@ Component({
                 clearTimeout(autoShowHideChatTimer);
                 autoShowHideChatTimer = null;
             }
-            const {companyId, isShowChat} = this.data;
+            const {probeData, isShowChat} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             // 发送显示聊窗的通知
             let route = "chat.chatHandler.hideIframe";
@@ -280,24 +283,26 @@ Component({
                     target: "",
                     type: "N",
                     from: mantisChatNew.uid,
-                    companyId,
+                    companyId:probeData.companyId,
                     channelId: mantisChatNew.chat.channelId
                 }, function (data) {
 
                 });
             }
             mantisChatNew.unReadMsgNumber = 0;
+            mantisChatNew.req_mode = autoFlag;
             this.hideInviteDiv();
             this.hideResvDiv(false, "");
-            this.handleMantisChat(mantisChatNew);
-            this.setData({
-                isShowChat: true,
-                tipMsg: null,
-            })
+            this.handleMantisChat(mantisChatNew, ()=>{
+                this.setData({
+                    isShowChat: true,
+                    tipMsg: null,
+                });
+            });
         },
         hideChat() {
             const _this = this;
-            const {companyId, isShowChat, probeData} = this.data;
+            const {probeData, isShowChat} = this.data;
             let mantisChat = this.data.mantisChat;
             // 发送隐藏聊窗的通知
             let route = "chat.chatHandler.hideIframe";
@@ -309,7 +314,7 @@ Component({
                     target: "",
                     type: "Y",
                     from: mantisChat.uid,
-                    companyId,
+                    companyId: probeData.companyId,
                     channelId: mantisChat.chat.channelId
                 }, function (data) {
                 });
@@ -325,7 +330,69 @@ Component({
                 isShowChat: false
             })
         },
-        // 隐藏邀请框
+        // 邀请
+        initInvite(invite){
+            const {mantis, probeData} = this.data;
+            let mantisNew = {...mantis};
+            let inviteMobile = {
+                enable: probeData.mbInviteEnable,
+                delay: probeData.mbInviteDelay || 3,
+                repeat: probeData.mbInviteRepeat || 15,
+            };
+
+            if (invite) {
+                inviteMobile.showInvite = invite.mobile.showInvite;
+            }
+
+            mantisNew.invite = inviteMobile;
+            this.handleMantis(mantisNew);
+            if(inviteMobile.enable){
+                this.doInvite();
+            }
+        },
+        doInvite(inviteInfo){
+            const _this = this;
+            const {mantis, mantisChat, isShowChat} = this.data;
+            const mantisChatNew = {...mantisChat};
+            // 如果已经开始对话，则不需要再弹出邀请框
+            if (mantisChatNew.chat.hasChat) {
+                return;
+            }
+
+            // 如果有邀请信息，说明是咨询师发来的
+            if (!!inviteInfo) {
+                let agentId = inviteInfo.agentId;
+                let used = inviteInfo.used;
+                if (!!agentId && (!used || used === "N")) {
+                    mantisChatNew.req_mode = "INVITE";
+                    mantisChatNew.paras.assignedAgent = agentId;
+                    this.handleMantisChat(mantisChatNew);
+                }
+            }
+            let setting = mantis.invite
+            if(setting.enable){
+                let delay = setting.delay;
+                let repeat = setting.repeat;
+
+                setTimeout(function () {
+                    if (!isShowChat) {
+                        _this.showInviteDiv();
+                    }
+                }, delay * 1000);
+
+                if (repeat > 0) {
+                    setInterval(function () {
+                        if (!isShowChat) {
+                            _this.showInviteDiv();
+                        }
+                    }, repeat * 1000);
+                }
+            } else {
+                _this.showInviteDiv();
+            }
+
+        },
+        // 显示邀请框
         showInviteDiv() {
             this.setData({
                 isShowInvite: true
@@ -351,15 +418,18 @@ Component({
             })
         },
         initParams: function () {
-            const {pageParam, uid} = this.data;
+            const {pageParam, uid, chatPageUrl} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.uid = uid || this.handleUid(); // 获取uid
-            mantisChatNew.chatPageUrl = pageParam.chatPageUrl + '&gdt_vid=' + (pageParam.gdt_vid || pageParam.qz_gdt);
+            mantisChatNew.chatPageUrl = chatPageUrl;
+            if(pageParam.gdt_vid || pageParam.qz_gdt){
+                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (pageParam.gdt_vid || pageParam.qz_gdt)
+            }
             this.handleMantisChat(mantisChatNew);
         },
         _requestChat(params) {
             this.setData({
-                parentParams: params
+                parentParams: params || {}
             })
             const {mantisChat} = this.data;
             if (!mantisChat.chat.connected) { //  如果没有发起会话再发请求
@@ -369,7 +439,7 @@ Component({
             }
         },
         loadProbeData() {
-            const {serverUrl, companyId, probeId, mantisChat} = this.data;
+            const {serverUrl, companyId, probeId} = this.data;
             if (companyId && probeId) {
                 startTime = Date.now();
                 console.log('探头请开始', startTime);
@@ -443,6 +513,7 @@ Component({
             }
             this.handleMantisChat(mantisChatNew);
             this.initChat();
+            this.initInvite(res.data.invite);
         },
         initChat() {
             const {probeData, companyId} = this.data;
@@ -616,7 +687,7 @@ Component({
         queryEntry: function (callback) {
             let _this = this;
             let route = 'gateMini.gateMiniHandler.queryCustomerEntry';
-            const {probeData, mantisChat, companyId, pageParam} = this.data;
+            const {probeData, mantisChat, pageParam} = this.data;
             let port = ports[this.handleRandom(0, 1)];
             pomelo.init({
                 host: probeData.chatServer,
@@ -625,7 +696,7 @@ Component({
                 pomelo.request(route, {
                     uid: mantisChat.uid,
                     siteId: '',
-                    companyId: companyId,
+                    companyId: probeData.companyId,
                     buId: probeData.buId,
                     // 如果采用指定客服分组的方式发起
                     sgId: probeData.defaultSvgId,
@@ -1068,8 +1139,7 @@ Component({
                 //clear reminder count
                 reminderCount = 0;
                 // 通知对话发起
-                let obj = {type: "chat", hasChat: true, isTimedOut: false, chatId: mantisChatNew.chat.chatId};
-                // mantisChatNew.messager.send(JSON.stringify(obj));
+                mantisChatNew.chat.hasChat = true;
 
                 // 如果咨询师配置头像，则最高优先级使用
                 try {
@@ -1157,12 +1227,12 @@ Component({
             })
         },
         getRequest: function () {
-            const {probeData, companyId, pageParam} = this.data;
+            const {probeData, mantis} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.lp = mantisChatNew.chatPageUrl;
             let req = mantisChatNew.request;
             req.page_title = mantisChatNew.page_title;
-            req.req_mode = mantisChatNew.mode;
+            req.req_mode = mantisChatNew.req_mode;
             req.req_ele = mantisChatNew.ele || "";
 
             // set landing page url
@@ -1174,9 +1244,9 @@ Component({
             req.vistor_id = mantisChatNew.uid;
             req.srv_gp_id = probeData.defaultSvgId;
             req.vistor_media = "mobile";
-            req.company = companyId;
+            req.company = probeData.companyId;
             req.buId = mantisChatNew.buId;
-            req.trackId = mantisChatNew.trackId;
+            req.trackId = mantis.trackId;
             req.assignedAgent = mantisChatNew.assignedAgent;
             req.browser = this.getDeviceInfo();
             //search word info
@@ -1238,7 +1308,7 @@ Component({
         },
         requestChatInner: function (host, port) {
             const _this = this;
-            const {probeData, mantisChat, companyId} = this.data;
+            const {probeData, mantisChat} = this.data;
             allMessages = [];
             // mantisChat.chat.isConnecting = true;
 
@@ -1475,9 +1545,10 @@ Component({
             }
         },
         getWechatRule(msgData) {
+            const {probeData} = this.data;
             let route = "chat.chatHandler.findWelcomeWeChatAssignEngine";
             pomelo.request(route, {
-                companyId: mantisChat.paras.companyId,
+                companyId: probeData.companyId,
                 chatId: mantisChat.chat.chatId,
                 wechatAssignId: msgData.wechatAssignId,
                 uid: mantisChat.uid
@@ -1566,16 +1637,16 @@ Component({
         },
         //  记录进入留言表单
         sendEntry(reason) {
-            const {mantis, mantisChat, probeData, companyId} = this.data;
+            const {mantis, mantisChat, probeData} = this.data;
             let entryInfo = {};
             entryInfo.uid = mantisChat.uid;
             entryInfo.buId = probeData.buId;
             entryInfo.ele = mantis.ele;
-            entryInfo.companyId = companyId;
+            entryInfo.companyId = probeData.companyId;
             entryInfo.pageUrl = mantisChat.chatPageUrl;
             entryInfo.projectId = probeData.projectId;
             entryInfo.reason = reason;
-            let url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/message/addEntryInfo.do";
+            let url = "https://" + probeData.chatServer + "/" + probeData.companyId + "/api-war/message/addEntryInfo.do";
             wx.request({
                 url,
                 data: entryInfo,
@@ -1809,7 +1880,7 @@ Component({
                 return;
             }
 
-            let action = mantisChat.chat.mbMsgAction || "tip";
+            let action = probeData.mbMsgAction || "tip";
             if (action === "tip") {
                 this.notifyNewMsg(msg);
             } else {
@@ -1856,7 +1927,7 @@ Component({
             }
         },
         msgResend(msg, msgType) {
-            const {companyId, probeData} = this.data;
+            const {probeData} = this.data;
             pomelo.request("chat.chatHandler.customerSend", {
                 //消息接口
                 content: msg,
@@ -1866,7 +1937,7 @@ Component({
                 target: "",
                 type: "text",
                 projectId: probeData.projectId,
-                companyId,
+                companyId: probeData.companyId,
                 channelId: mantisChat.chat.channelId,
                 msgType: msgType
             }, function (data) {
@@ -1992,9 +2063,11 @@ Component({
             })
         },
         // 修改mantisChat
-        handleMantisChat: function (mantisChat) {
+        handleMantisChat: function (mantisChat, cb) {
             this.setData({
                 mantisChat
+            }, () => {
+                cb && cb()
             })
         },
         bindKeyInput: function (e) {
@@ -2108,28 +2181,28 @@ Component({
             })
         },
         clickFloating() {
+            const {mantis} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
-            mantisChatNew.paras.req_mode = "VISTOR";
-            this.handleMantisChat(mantisChatNew);
-            this._requestChat();
+            mantisChatNew.req_mode = "VISTOR";
+            this.handleMantisChat(mantisChatNew, () => this._requestChat());
             let ut = {};
             // save the click event
             ut.ele_name = "右下角客服栏";
-            ut.e_id = mantisChatNew.paras.trackId;
+            ut.e_id = mantis.e_id;
             ut.type = "C";
             this.sendClick(ut);
             return false;
         },
         //发送点击信息
         sendClick(cInfo) {
-            let {mantisChat} = this.data;
-            if (!mantisChat.paras.trackId) {
+            let {mantisChat, mantis} = this.data;
+            if (!mantis.trackId) {
                 return;
             }
             wx.request({
                 url: mantisChat.paras.trackUrl,
                 data: cInfo,
-                method: 'POST',
+                method: 'GET',
                 success: res => {
 
                 },
@@ -2405,17 +2478,20 @@ Component({
             let mantisChatNew = {...this.data.mantisChat};
             switch (autoChatDelay) {
                 case 0:
-                    mantisChatNew.paras.req_mode = "AUTO";
+                    mantisChatNew.req_mode = "AUTO";
                     enterDuration = 0;
-                    _this.handleMantisChat(mantisChatNew);
-                    _this._requestChat();
+                    _this.handleMantisChat(mantisChatNew,()=>{
+                        _this._requestChat();
+                    });
+
                     break;
                 default:
                     setTimeout(function () {
-                        mantisChatNew.paras.req_mode = "AUTO";
+                        mantisChatNew.req_mode = "AUTO";
                         enterDuration = autoChatDelay;
-                        _this.handleMantisChat(mantisChatNew);
-                        _this._requestChat();
+                        _this.handleMantisChat(mantisChatNew, ()=>{
+                            _this._requestChat();
+                        });
                     }, autoChatDelay * 1000);
                     break;
             }
@@ -2658,7 +2734,7 @@ Component({
         // 轨迹
         mantisSendPageInfo() {
             const _this = this;
-            const {mantisChat, probeData, probeId, companyId} = this.data;
+            const {mantisChat, probeData, probeId} = this.data;
             let mantisNew = {...this.data.mantis};
             if (!!mantisNew.e_id) {
                 console.warn("repeat!!");
@@ -2672,10 +2748,10 @@ Component({
 
             let en = {
                 uid: mantisChat.uid,
-                company: companyId,
+                company: probeData.companyId,
                 buId: probeData.buId,
                 page_title: mantisNew.title || '',
-                url: mantisNew.chatPageUrl,
+                url: mantisChat.chatPageUrl,
                 media: "mobile",
                 browser: this.getDeviceInfo(),
                 is_lp: isLpStr,
@@ -2688,30 +2764,31 @@ Component({
                 probeId,
                 serviceGroupId: probeData.defaultSvgId
             };
-
             en.type = "E";
             wx.request({
                 url: "https://tk" + probeData.chatServer + "/u/1.gif",
                 data: en,
                 method: 'GET',
-                success: data => {
-                    if (!data) {
+                success: res => {
+                    if (!res) {
                         mantisNew.e_id = null;
                         console.error("fail to save t, undefined!");
                         _this.handleMantis(mantisNew);
                         return;
                     }
                     //返回当前页面的轨迹的Id
-                    if (data.error) {
+                    if (res.error) {
                         mantisNew.e_id = null;
                         console.error("fail to save t, error!");
                         _this.handleMantis(mantisNew);
                         return;
                     }
+                    let data = res.data;
                     mantisNew.trackRetry = 0;
 
                     //{trackId:r.insertedId, site_id:obj.siteId, ad:obj.referInfo.ad, plan:obj.plan, unit:obj.unit, subUnit:obj.subUnit, creative:obj.creative, url_mathced:true/false}
                     mantisNew.e_id = this.mantisGetTrackId(data.trackId);
+                    mantisNew.trackId = data.trackId;
                     // 访客_id
                     mantisNew.v_id = data.v_id;
                     _this.handleMantis(mantisNew);
@@ -2786,10 +2863,10 @@ Component({
         },
         // 发送ttl
         mantisSendAlive(why) {
-            const {mantisChat, probeData, companyId} = this.data;
+            const {mantis, mantisChat, probeData} = this.data;
             let liveInfo = {};
             liveInfo.type = "L";
-            liveInfo.e_id = mantisChat.e_id;
+            liveInfo.e_id = mantis.e_id;
 
             if (!beginTime) {
                 beginTime = new Date().getTime();
@@ -2799,13 +2876,13 @@ Component({
                 return;
             }
             beginTime = new Date().getTime();
-            liveInfo.company = companyId;
+            liveInfo.company = probeData.companyId;
             liveInfo.buId = probeData.buId;
             liveInfo.serviceGroupId = probeData.defaultSvgId;
             liveInfo.uid = mantisChat.uid;
             liveInfo.defaultSg = probeData.defaultSvgId;
             liveInfo.why = why;
-            liveInfo.v_id = probeData.v_id;
+            liveInfo.v_id = mantis.v_id;
 
             // 是否是聊天模式
             liveInfo.mode = "no";
@@ -2864,8 +2941,11 @@ Component({
         getDeviceInfo() {
             const res = wx.getSystemInfoSync();
             let deviceInfo = '';
-            deviceInfo = '设备品牌' + res.brand + ';设备型号：' + res.model + ';微信版本：' + res.version + ';系统版本：' + res.system;
-            return deviceInfo
+            deviceInfo = '设备品牌：' + res.brand + ';设备型号：' + res.model + ';微信版本：' + res.version + ';系统版本：' + res.system;
+            return {
+                ua: deviceInfo,
+                "type": "wechat-minProgram"
+            }
         },
         getMessagePhone(msgContent) {
             let tempPhone = '';

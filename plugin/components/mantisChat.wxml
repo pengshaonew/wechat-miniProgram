@@ -1,4 +1,6 @@
-<view class="mantisMain" style="display:{{isShowChat?'flex':'none'}}">
+<view class="mantisMain"
+      style="display:{{isShowChat?'flex':'none'}};top: {{100 - (mantisChat.req_mode === 'AUTO' ? probeData.mbAutoIframeHeight : probeData.mbIframeHeight)}}%"
+>
     <view class="mantisChatHeader" style="background:{{probeData.mbTitleColor}}">
         <view class="headerL">
             <image src="{{probeData.mbTitleLogoUrl}}" class="headerTitleImg" />
@@ -228,7 +230,10 @@
 </view>
 
 <!--提醒消息内容浮窗-->
-<view class="mantisMinimizeMsg" style="display:{{tipMsg?'block':'none'}}">
+<view
+        class="mantisMinimizeMsg"
+        style="display:{{tipMsg?'block':'none'}};top:{{probeData.mbMsgLocation === 'HEAD' ? 0 : 'auto'}};bottom:{{probeData.mbMsgLocation === 'HEAD' ? 'auto' : probeData.mbMsgLocation === 'BOTTOM' ? 0 : '360rpx'}}"
+>
     <view class="minimizeMsgTop">
         <image class="minimizeGB" src="https://probe.bjmantis.net/chat/img/close.png" />
         <image class="minimizeHeader" src="https://probe.bjmantis.net/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg" />
@@ -242,7 +247,7 @@
 <!--邀请框-->
 <view class="mantisInvitation" style="display:{{isShowInvite?'block':'none'}}">
     <image bindtap="hideInviteDiv" class="closeInviteIcon" src="../utils/img/closeInviteIcon.png" />
-    <image class="invitationImg" src="{{probeData.mbInviteUrl}}" />
+    <image class="invitationImg" src="{{probeData.mbInviteUrl}}" mode="aspectFit" style="width:{{probeData.mbInviteWidth || 600}}rpx" />
 </view>
 
 <!--退出挽留-->
