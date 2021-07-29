@@ -365,7 +365,7 @@ Component({
                 let used = inviteInfo.used;
                 if (!!agentId && (!used || used === "N")) {
                     mantisChatNew.req_mode = "INVITE";
-                    mantisChatNew.paras.assignedAgent = agentId;
+                    mantisChatNew.assignedAgent = agentId;
                     this.handleMantisChat(mantisChatNew);
                 }
             }
@@ -528,14 +528,9 @@ Component({
             if (!!track_host) {
                 track_host = "tk" + track_host;
             }
-            mantisChatNew.paras.trackUrl = "https://" + track_host + "/u/1.gif";
-            mantisChatNew.con = {host: chat_host, port: chat_port};
-            mantisChatNew.paras.deviceInfo = this.getDeviceInfo();
-            let result = mantisChatNew.paras.deviceInfo;
+            mantisChatNew.trackUrl = "https://" + track_host + "/u/1.gif";
             let sgIdInCookie = wx.getStorageSync('mantis_sgid' + companyId);
-            if (!!sgIdInCookie) {
-                mantisChatNew.paras.serviceGroupId = sgIdInCookie;
-            }
+            mantisChatNew.serviceGroupId = sgIdInCookie || probeData.defaultSvgId;
 
             // pomelo监听
             this.registerListener();
@@ -684,7 +679,7 @@ Component({
             mantisChatNew.chat.mbAutoIframeHeight = probeData.mbAutoIframeHeight;
             this.handleMantisChat(mantisChatNew);
         },
-        queryEntry: function (callback) {
+        queryEntry: function () {
             let _this = this;
             let route = 'gateMini.gateMiniHandler.queryCustomerEntry';
             const {probeData, mantisChat, pageParam} = this.data;
@@ -699,11 +694,11 @@ Component({
                     companyId: probeData.companyId,
                     buId: probeData.buId,
                     // 如果采用指定客服分组的方式发起
-                    sgId: probeData.defaultSvgId,
+                    sgId: mantisChat.serviceGroupId,
                     defaultSgId: probeData.defaultSvgId,
                     probeId: probeData.id, // 探头ID
                     areaRuleFlag: probeData.areaRuleFlag, //探头配置地域规则标识
-                    assignedAgent: '',
+                    assignedAgent: mantisChat.assignedAgent,
                     projectId: probeData.projectId,
                     ocpcUrl: '',
                     reqInfo: this.getRequest(),
@@ -714,7 +709,7 @@ Component({
                     thirdAccount: pageParam.account,
                     thirdUid: pageParam.userId,
                     promotionMsg: '',
-                    searchWordMessage: 'searchWordMessage'
+                    searchWordMessage: ''
                 }, data => {
                     pomelo.disconnect(); //断开连接与gate服务器的连接
                     if (data.code === 500) {
@@ -784,14 +779,14 @@ Component({
                     }
                 }
 
+                let msgType = data.msgType;
                 if (say_from !== 'V' && say_from !== 'A' || msgType === 'F_S') {
                     return;
                 }
 
-                // 排除自动发送的消息
-                let msgType = data.msgType;
                 // 如果是挽留提交的消息就不处理
                 if (msgType === 'R_S') return;
+
                 if (!!msgType && msgType !== 'A') {
                     // 咨询师或者学员任何一方说话，则取消欢迎语自动发送
                     this.clearWelcomeMsgTmr();
@@ -881,13 +876,13 @@ Component({
                 this.handleMantisChat(mantisChatNew);
             })
 
-            pomelo.on('error', function (data) {
+            pomelo.on('error', function () {
                 console.log('error');
 
             })
 
             // 连接错误
-            pomelo.on('ON_ERROR', data => {
+            pomelo.on('ON_ERROR', () => {
                 console.log('ON_ERROR');
                 let mantisChatNew = {...this.data.mantisChat};
                 pomeloErrorCount++;
@@ -907,7 +902,7 @@ Component({
             })
 
             // 咨询师离线 没进来
-            pomelo.on('ON_AGENT_LEAVE', data => {
+            pomelo.on('ON_AGENT_LEAVE', () => {
                 console.log('咨询师离线');
                 const _this = this;
                 setTimeout(function () {
@@ -1090,7 +1085,7 @@ Component({
             })
 
             // 咨询师未匹配
-            pomelo.on('ON_NO_AGENT_MATCH', data => {
+            pomelo.on('ON_NO_AGENT_MATCH', () => {
                 console.log('咨询师未匹配');
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = false;
@@ -1133,7 +1128,7 @@ Component({
                 let endTime = new Date().getTime();
                 console.info("time:" + (endTime - beginTime) + "," + mantisChat.chat.chatId);
                 // show chat window
-                this.showChat(mantisChatNew.paras.mode, true);
+                this.showChat();
                 // 启用输入框
                 this.enableInput();
                 //clear reminder count
@@ -1169,9 +1164,6 @@ Component({
                     _this.stopAgentKeyIn();
                 }, 20);
 
-                if (!!mantisChatNew.paras.mbtr) {
-                    this.sendAiMsg(mantisChatNew.paras.mbtr);
-                }
                 this.cutOff();
                 this.resendContact();
                 this.handleMantisChat(mantisChatNew);
@@ -1196,14 +1188,14 @@ Component({
                         key: "mantis_sgid" + companyId,
                         data: newServiceGroupId
                     });
-                    mantisChat.paras.serviceGroupId = newServiceGroupId;
+                    mantisChatNew.serviceGroupId = newServiceGroupId;
                 }
 
                 // 指定的客服
                 if (!!targetAgentId) {
-                    mantisChatNew.paras.assignedAgent = targetAgentId;
+                    mantisChatNew.assignedAgent = targetAgentId;
                 }
-                mantisChatNew.paras.mode = "TRANSFER";
+                mantisChatNew.mode = "TRANSFER";
                 mantisChatNew.chat.isConnecting = false;
                 mantisChatNew.chat.connected = false;
                 mantisChatNew.chat.vistorSent = false;
@@ -1240,27 +1232,15 @@ Component({
 
             req.url = encodeURI(mantisChatNew.chatPageUrl);
 
-            // landing page id， 将来用来补全referer字符串
             req.vistor_id = mantisChatNew.uid;
-            req.srv_gp_id = probeData.defaultSvgId;
+            req.srv_gp_id = mantisChatNew.serviceGroupId;
             req.vistor_media = "mobile";
             req.company = probeData.companyId;
             req.buId = mantisChatNew.buId;
             req.trackId = mantis.trackId;
             req.assignedAgent = mantisChatNew.assignedAgent;
             req.browser = this.getDeviceInfo();
-            //search word info
-            req.cookieRefer = mantisChatNew.cookieRefer;
-            try {
-                if (!!req.cookieRefer) {
-                    let parsed = JSON.parse(req.cookieRefer);
-                    if (parsed) {
-                        req.searchwdInPage = parsed.searchwd;
-                    }
-                }
-            } catch (e) {
 
-            }
             this.handleMantisChat(mantisChatNew);
             req.ipCheck = mantisChatNew.ipCheck;
             req.brand = mantisChatNew.brand;
@@ -1327,11 +1307,11 @@ Component({
                     companyId: probe.companyId,
                     buId: probe.buId,
                     // 如果采用指定客服分组的方式发起
-                    sgId: probe.defaultSvgId,
+                    sgId: mantisChat.serviceGroupId,
                     defaultSgId: probe.defaultSvgId,
                     probeId: probe.id, // 探头ID
                     areaRuleFlag: probe.areaRuleFlag, //探头配置地域规则标识
-                    assignedAgent: probe.assignedAgent,
+                    assignedAgent: mantisChat.assignedAgent,
                     projectId: probe.projectId,
                     ocpcUrl: '',
                     reqInfo: _this.getRequest(),
@@ -2013,7 +1993,7 @@ Component({
                 //消息接口
                 msgId,
                 content: msgContent,
-                sgId: probeData.defaultSvgId,
+                sgId: mantisChat.serviceGroupId,
                 chatId: mantisChat.chatId,
                 agentId: 'tantou@7011',
                 target: "",
@@ -2200,7 +2180,7 @@ Component({
                 return;
             }
             wx.request({
-                url: mantisChat.paras.trackUrl,
+                url: mantisChat.trackUrl,
                 data: cInfo,
                 method: 'GET',
                 success: res => {
@@ -2248,7 +2228,7 @@ Component({
         //咨询师不在线留言数据提交
         formSubmit(e) {
             console.log('form发生了submit事件，携带数据为：', e.detail.value);
-            const {probeData, mantisChat, companyId, probeId} = this.data;
+            const {probeData, mantisChat, companyId, probeId, mantis, pageParam} = this.data;
             const url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
             let values = e.detail.value;
             let resvInfo = {};
@@ -2258,29 +2238,12 @@ Component({
             resvInfo.buId = probeData.buId;
             resvInfo.companyId = companyId;
             resvInfo.ele = mantisChat.ele;
-            resvInfo.pageUrl = mantisChat.paras.pageUrl || 'pages/index/index';
-            resvInfo.referer = mantisChat.paras.referer;
-            resvInfo.lpUrl = mantisChat.paras.lpUrl || 'pages/index/index';
+            resvInfo.pageUrl = mantisChat.chatPageUrl;
+            resvInfo.lpUrl = mantisChat.chatPageUrl;
             resvInfo.projectId = probeData.projectId;
             resvInfo.reqVistorMedia = "mobile";
-            resvInfo.thirdUserId = mantisChat.paras.thirdUserId;
-            resvInfo.thirdAccount = mantisChat.paras.thirdAccount;
-
-            let t = mantisChat.cookieRefer;
-            try {
-                if (!!t) {
-                    let count = 0;
-                    while (count < 4) {
-                        let tmp = t + "";
-                        t = decodeURI(t);
-                        if (tmp == t) {
-                            break;
-                        }
-                        count = count + 1;
-                    }
-                }
-            } catch (error) {
-            }
+            resvInfo.thirdUserId = pageParam.userId;
+            resvInfo.thirdAccount = pageParam.account;
 
             resvInfo.messageType = "SOURCE_CHAT_MSG";
             resvInfo.phone1 = values.phone;
@@ -2625,7 +2588,7 @@ Component({
         // 表单留言
         _sendPage(values, callbackSuccess, callbackFail) {
             if (!values.phone) return;
-            const {probeId, companyId, probeData, mantisChat} = this.data;
+            const {probeId, companyId, probeData, mantisChat, mantis} = this.data;
             let paras = {};
             const url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
             let otherParams = values.others || {};
@@ -2659,10 +2622,9 @@ Component({
                 'siteId': paras.siteId,
                 'buId': probeData.buId,
                 'probeId': probeId,
-                'companyId': companyId,
+                'companyId': probeData.companyId,
                 'pageUrl': paras.pageUrl,
                 'projectId': paras.projectId,
-                "referer": mantisChat.referer,
                 "lpUrl": paras.pageUrl,
                 "reqVistorMedia": "mobile",
                 "reqSearchWd": '',
@@ -2734,7 +2696,7 @@ Component({
         // 轨迹
         mantisSendPageInfo() {
             const _this = this;
-            const {mantisChat, probeData, probeId} = this.data;
+            const {mantisChat, probeData, probeId, pageParam} = this.data;
             let mantisNew = {...this.data.mantis};
             if (!!mantisNew.e_id) {
                 console.warn("repeat!!");
@@ -2758,11 +2720,11 @@ Component({
                 lp: mantisChat.chatPageUrl,
                 lp_calc: "REFER",
                 projectId: probeData.projectId,
-                pageparam: mantisNew.pageparam,
-                thirdUserId: mantisNew.userId,
-                thirdAccount: mantisNew.account,
+                pageparam: pageParam.pageparam,
+                thirdUserId: pageParam.userId,
+                thirdAccount: pageParam.account,
                 probeId,
-                serviceGroupId: probeData.defaultSvgId
+                serviceGroupId: mantisChat.serviceGroupId
             };
             en.type = "E";
             wx.request({
@@ -2878,7 +2840,7 @@ Component({
             beginTime = new Date().getTime();
             liveInfo.company = probeData.companyId;
             liveInfo.buId = probeData.buId;
-            liveInfo.serviceGroupId = probeData.defaultSvgId;
+            liveInfo.serviceGroupId = mantisChat.serviceGroupId;
             liveInfo.uid = mantisChat.uid;
             liveInfo.defaultSg = probeData.defaultSvgId;
             liveInfo.why = why;
