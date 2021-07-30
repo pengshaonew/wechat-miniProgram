@@ -4,8 +4,6 @@
 
 <button bindtap="mantisRequestChat">发起会话</button>
 <button bindtap="handleSubmit">表单留言</button>
-<button bindtap="audioPlay">play</button>
-<audio id="message" src="{{src}}" />
 <block wx:for="{{[1,2,3,4,5,6,7,8,9,0]}}">
     <view class="item">{{item}}</view>
 </block>
@@ -15,5 +13,5 @@
         probeId="60ff7b7942e6824c77cf5c70"
         phone="13123123123"
         chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3401&mpid=60f6335542e6827c32c4d8bb"
-        pageParam="{{param}}"
+        param="{{param}}"
 />

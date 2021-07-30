@@ -1,5 +1,6 @@
 // plugin/components/mantisChat.js
-let startTime = 0;
+let startTime = 0;  // 探头请求时长
+let reqStartTime = 0;  // 发起会话请求时长
 const exportData = require('../index');
 const pomelo = require('pomelo-weixin-client');
 
@@ -192,7 +193,7 @@ Component({
             type: String,
             value: ''
         },
-        pageParam: {
+        params: {
             type: Object,
             value: {}
         }
@@ -250,10 +251,10 @@ Component({
                 useWebAudioImplement: true
             });
             this.messageAudio.src = 'https://probe.bjmantis.net/chat/13203.mp3';
-            const {pageParam, companyId} = this.data;
-            if (pageParam) {
+            const {params, companyId} = this.data;
+            if (!params) {
                 this.setData({
-                    pageParam: {}
+                    params: {}
                 })
             }
             wx.setStorage({
@@ -283,7 +284,7 @@ Component({
                     target: "",
                     type: "N",
                     from: mantisChatNew.uid,
-                    companyId:probeData.companyId,
+                    companyId: probeData.companyId,
                     channelId: mantisChatNew.chat.channelId
                 }, function (data) {
 
@@ -292,8 +293,8 @@ Component({
             mantisChatNew.unReadMsgNumber = 0;
             mantisChatNew.req_mode = autoFlag;
             this.hideInviteDiv();
-            this.hideResvDiv(false, "");
-            this.handleMantisChat(mantisChatNew, ()=>{
+            this.hideResvDiv();
+            this.handleMantisChat(mantisChatNew, () => {
                 this.setData({
                     isShowChat: true,
                     tipMsg: null,
@@ -331,7 +332,7 @@ Component({
             })
         },
         // 邀请
-        initInvite(invite){
+        initInvite(invite) {
             const {mantis, probeData} = this.data;
             let mantisNew = {...mantis};
             let inviteMobile = {
@@ -346,11 +347,11 @@ Component({
 
             mantisNew.invite = inviteMobile;
             this.handleMantis(mantisNew);
-            if(inviteMobile.enable){
+            if (inviteMobile.enable) {
                 this.doInvite();
             }
         },
-        doInvite(inviteInfo){
+        doInvite(inviteInfo) {
             const _this = this;
             const {mantis, mantisChat, isShowChat} = this.data;
             const mantisChatNew = {...mantisChat};
@@ -370,7 +371,7 @@ Component({
                 }
             }
             let setting = mantis.invite
-            if(setting.enable){
+            if (setting.enable) {
                 let delay = setting.delay;
                 let repeat = setting.repeat;
 
@@ -414,16 +415,16 @@ Component({
         // 隐藏留言
         hideResvDiv() {
             this.setData({
-                leavingMessage: false
+                isShowLeave: false
             })
         },
         initParams: function () {
-            const {pageParam, uid, chatPageUrl} = this.data;
+            const {params, uid, chatPageUrl} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.uid = uid || this.handleUid(); // 获取uid
             mantisChatNew.chatPageUrl = chatPageUrl;
-            if(pageParam.gdt_vid || pageParam.qz_gdt){
-                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (pageParam.gdt_vid || pageParam.qz_gdt)
+            if (params.gdt_vid || params.qz_gdt) {
+                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (params.gdt_vid || params.qz_gdt)
             }
             this.handleMantisChat(mantisChatNew);
         },
@@ -529,8 +530,7 @@ Component({
                 track_host = "tk" + track_host;
             }
             mantisChatNew.trackUrl = "https://" + track_host + "/u/1.gif";
-            let sgIdInCookie = wx.getStorageSync('mantis_sgid' + companyId);
-            mantisChatNew.serviceGroupId = sgIdInCookie || probeData.defaultSvgId;
+            mantisChatNew.serviceGroupId = wx.getStorageSync('mantis_sgid' + companyId);
 
             // pomelo监听
             this.registerListener();
@@ -682,8 +682,10 @@ Component({
         queryEntry: function () {
             let _this = this;
             let route = 'gateMini.gateMiniHandler.queryCustomerEntry';
-            const {probeData, mantisChat, pageParam} = this.data;
+            const {probeData, mantisChat, params} = this.data;
             let port = ports[this.handleRandom(0, 1)];
+            reqStartTime = Date.now();
+            console.log('queryCustomerEntry', reqStartTime);
             pomelo.init({
                 host: probeData.chatServer,
                 port
@@ -705,9 +707,9 @@ Component({
                     lpRequestDuration: 0,
                     welcome: {},
                     xst: '',
-                    pageparam: pageParam.pageParam,
-                    thirdAccount: pageParam.account,
-                    thirdUid: pageParam.userId,
+                    pageparam: params.pageParam,
+                    thirdAccount: params.account,
+                    thirdUid: params.userId,
                     promotionMsg: '',
                     searchWordMessage: ''
                 }, data => {
@@ -1114,7 +1116,7 @@ Component({
 
             // 对话发起成功
             pomelo.on('ON_CHANNEL_OK', data => {
-
+                console.log('ON_CHANNEL_OK', Date.now() - reqStartTime);
                 const _this = this;
                 const {parentParams} = this.data;
                 let mantisChatNew = {...this.data.mantisChat};
@@ -1127,6 +1129,7 @@ Component({
                 mantisChatNew.chat.isRobot = data.msg.isRobot;
                 let endTime = new Date().getTime();
                 console.info("time:" + (endTime - beginTime) + "," + mantisChat.chat.chatId);
+                lastVisitorMsgTime = new Date().getTime();
                 // show chat window
                 this.showChat();
                 // 启用输入框
@@ -1288,7 +1291,7 @@ Component({
         },
         requestChatInner: function (host, port) {
             const _this = this;
-            const {probeData, mantisChat} = this.data;
+            const {probeData, mantisChat, params} = this.data;
             allMessages = [];
             // mantisChat.chat.isConnecting = true;
 
@@ -1301,7 +1304,7 @@ Component({
                 port
             }, function () {
                 let searchWordMessage = null;
-                let params = {
+                let param = {
                     uid: mantisChat.uid,
                     siteId: mantisChat.siteId,
                     companyId: probe.companyId,
@@ -1318,14 +1321,13 @@ Component({
                     lpRequestDuration: enterDuration,
                     welcome: '',
                     xst: '',
-                    pageparam: '',
-                    thirdAccount: '',
-                    thirdUid: '',
-                    promotionMsg: '',
+                    pageparam: params.pageParam,
+                    thirdAccount: params.account,
+                    thirdUid: params.userId,
+                    promotionMsg,
                     searchWordMessage
                 };
-                console.log(Date.now() - startTime);
-                pomelo.request("connectorMini.entryHandler.customerEnter", params, function (data) {
+                pomelo.request("connectorMini.entryHandler.customerEnter", param, function (data) {
 
                     if (!data || data.error || !data.chatId) {
                         console.error("Fail to request" + JSON.stringify(data));
@@ -1345,7 +1347,6 @@ Component({
                     mantisChatNew.sgId = data.sgId;
                     if (data.agentImg) {
                         mantisChatNew.agent_msg_icon = data.agentImg;
-                        // $('.serviceHead>img').attr('src', data.agentImg);
                     }
                     _this.handleMantisChat(mantisChatNew);
                     if (data.msgType === 'ON_WEL_MSG') {
@@ -1591,7 +1592,7 @@ Component({
                     visitorId: mantisChat.uid,
                     msgId: data.msgId
                 }, function (data) {
-                    console.log('消息回执返回', data);
+                    // console.log('消息回执返回', data);
                 });
             }
         },
@@ -1798,7 +1799,7 @@ Component({
             }
             const _this = this;
             cutOffTimer = setInterval(function () {
-                let mantisChatNew = _this.data.mantisChat;
+                let mantisChatNew = {..._this.data.mantisChat};
                 let gap = new Date().getTime() - lastVisitorMsgTime;
                 if (gap > REMINDER_INTERVAL * MAX_REMINDER * 60 * 1000) {
                     if (!!mantisChatNew.chat.connected) {
@@ -1811,7 +1812,7 @@ Component({
                         clearInterval(agentTimedTimer);
                         reminderTmr = null;
                         agentTimedTimer = null;
-
+                        _this.handleMantisChat(mantisChatNew);
                     }
                 }
             }, 5000)
@@ -2061,7 +2062,7 @@ Component({
             // 最后触发键盘输入的时间
             mantisChatNew.chat.lastInputtingTime = new Date().getTime();
             let value = e.detail.value;
-            if (!mantisChatNew.chat.connected || !value) {
+            if (!value) {
                 return;
             }
             value = value.replace(/"/g, "'").replace(/<[^>]+>/g, '');
@@ -2111,6 +2112,12 @@ Component({
             this.setData({
                 inputValue: value
             });
+        },
+        pageScrollDown() {
+            // wx.pageScrollTo({
+            //     scrollTop: 0,
+            //     duration: 0
+            // });
         },
         callPhone: function (e) {
             let phone = e.target.dataset.phone;
@@ -2227,10 +2234,23 @@ Component({
         },
         //咨询师不在线留言数据提交
         formSubmit(e) {
-            console.log('form发生了submit事件，携带数据为：', e.detail.value);
-            const {probeData, mantisChat, companyId, probeId, mantis, pageParam} = this.data;
+            const {probeData, mantisChat, companyId, probeId, params} = this.data;
             const url = "https://" + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
             let values = e.detail.value;
+            if (!/^1[3-9]\d{9}$/.test(values.phone)) {
+                wx.showToast({
+                    title: '联系方式有误,请检查确认',
+                    icon: 'none'
+                });
+                return;
+            }
+            if (values.content && values.content.length > 200) {
+                wx.showToast({
+                    title: '情况描述超过最大长度',
+                    icon: 'none'
+                })
+                return;
+            }
             let resvInfo = {};
             resvInfo.probeId = probeId;
             resvInfo.uid = mantisChat.uid;
@@ -2242,8 +2262,8 @@ Component({
             resvInfo.lpUrl = mantisChat.chatPageUrl;
             resvInfo.projectId = probeData.projectId;
             resvInfo.reqVistorMedia = "mobile";
-            resvInfo.thirdUserId = pageParam.userId;
-            resvInfo.thirdAccount = pageParam.account;
+            resvInfo.thirdUserId = params.userId;
+            resvInfo.thirdAccount = params.account;
 
             resvInfo.messageType = "SOURCE_CHAT_MSG";
             resvInfo.phone1 = values.phone;
@@ -2443,7 +2463,7 @@ Component({
                 case 0:
                     mantisChatNew.req_mode = "AUTO";
                     enterDuration = 0;
-                    _this.handleMantisChat(mantisChatNew,()=>{
+                    _this.handleMantisChat(mantisChatNew, () => {
                         _this._requestChat();
                     });
 
@@ -2452,7 +2472,7 @@ Component({
                     setTimeout(function () {
                         mantisChatNew.req_mode = "AUTO";
                         enterDuration = autoChatDelay;
-                        _this.handleMantisChat(mantisChatNew, ()=>{
+                        _this.handleMantisChat(mantisChatNew, () => {
                             _this._requestChat();
                         });
                     }, autoChatDelay * 1000);
@@ -2588,7 +2608,7 @@ Component({
         // 表单留言
         _sendPage(values, callbackSuccess, callbackFail) {
             if (!values.phone) return;
-            const {probeId, companyId, probeData, mantisChat, mantis} = this.data;
+            const {probeId, companyId, probeData, mantisChat} = this.data;
             let paras = {};
             const url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/message/insertMessageInfo2.do";
             let otherParams = values.others || {};
@@ -2666,7 +2686,8 @@ Component({
                                 callbackSuccess()
                             } else {
                                 wx.showToast({
-                                    title: '留言成功'
+                                    title: '留言成功,请耐心等待通知',
+                                    icon: 'none'
                                 });
                             }
                         } else {
@@ -2674,8 +2695,8 @@ Component({
                                 callbackFail();
                             } else {
                                 wx.showToast({
-                                    title: '留言失败',
-                                    icon: 'error'
+                                    title: '留言出错，请咨询在线客服',
+                                    icon: 'none'
                                 });
                             }
                         }
@@ -2696,7 +2717,7 @@ Component({
         // 轨迹
         mantisSendPageInfo() {
             const _this = this;
-            const {mantisChat, probeData, probeId, pageParam} = this.data;
+            const {mantisChat, probeData, probeId, params} = this.data;
             let mantisNew = {...this.data.mantis};
             if (!!mantisNew.e_id) {
                 console.warn("repeat!!");
@@ -2720,11 +2741,11 @@ Component({
                 lp: mantisChat.chatPageUrl,
                 lp_calc: "REFER",
                 projectId: probeData.projectId,
-                pageparam: pageParam.pageparam,
-                thirdUserId: pageParam.userId,
-                thirdAccount: pageParam.account,
+                pageparam: params.pageparam,
+                thirdUserId: params.userId,
+                thirdAccount: params.account,
                 probeId,
-                serviceGroupId: mantisChat.serviceGroupId
+                serviceGroupId: probeData.defaultSvgId
             };
             en.type = "E";
             wx.request({

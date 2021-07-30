@@ -22,8 +22,5 @@ Page({
         this.mantisChat._sendPage({
             phone: 13123123123
         });
-    },
-    audioPlay(){
-        this.messageAudio.play();
     }
 })

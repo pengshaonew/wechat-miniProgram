@@ -1,16 +1,21 @@
 /* pages/index/index.wxss */
+
+button {
+    margin-bottom: 10rpx;
+}
+
 #nav {
-  text-align: center;
-  background: #eeeeee;
-  margin: 1em;
-  padding: 1em;
-  border-radius: 5px;
+    text-align: center;
+    background: #eeeeee;
+    margin: 1em;
+    padding: 1em;
+    border-radius: 5px;
 }
 
 #add {
-  margin: 1em;
+    margin: 1em;
 }
 
-.item{
-  height: 280rpx;
+.item {
+    height: 280rpx;
 }

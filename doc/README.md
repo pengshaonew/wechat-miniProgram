@@ -1,4 +1,4 @@
-# 螳螂客服SDK
+# 螳螂客服SDK(使用步骤说明)
 
 ### 引入插件代码包
 
@@ -9,7 +9,7 @@
 {
     "plugins": {
         "mantisChat": {
-            "version": "1.0.0",
+            "version": "1.0.1",
             "provider": "wxc6e2bf2f6fc2e53a"
         }
     }
@@ -17,7 +17,7 @@
 
 ```
 
-> 需要使用的螳螂客服的页面的埋码：
+> 需要使用的螳螂客服的页面埋码，例如：
 
 - json文件配置
 
@@ -42,9 +42,11 @@ mantisRequestChat() {
 }
 // 留言表单提交时调用
 handleSubmit() {
-    this.mantisChat._sendPage({
+    // formValue留言表单的数据对象
+    let formValue = {
         phone: 13123123123
-    });
+    };
+    this.mantisChat._sendPage(formValue);
 }
 
 ```
@@ -60,11 +62,11 @@ handleSubmit() {
 <!--
     companyId: 客户的公司id（必填）
     probeId: 探头id（必填）
+    chatPageUrl  小程序推广链接或探头"直达聊窗链接"（必填）
     serverUrl: 探头请求域名（不必填）
     uid: 可以传openId或UnionId 等唯一标识 
     phone：通过授权获取的访客手机号 
-    chatPageUrl  小程序推广链接或探头"直达聊窗链接"（必填）
-    pageParam: {object} 其他参数
+    params: {object} 其他参数
     
         object 对象有如下参数
         
@@ -78,12 +80,19 @@ handleSubmit() {
         id="mantisChat"
         companyId="3403"
         probeId="60ff7b7942e6824c77cf5c70"
-        phone="13123123123"
         chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3403&mpid=60f6335542e6827c32c4d8bb"
-        pageParam="{{param}}"
 />
 ```
 
++ 上述操作完成后打开开发者工具控制台
+
+![Image text](./stepsImg_1.png)
+
+![Image text](./stepsImg_2.png)
+
+![Image text](./stepsImg_3.png)
+
++ 联系运营等待审核通过
 
 
 [comment]: <> (这个文件用于书写插件文档，引用图片时必须以**相对路径**引用 ***doc*** 目录下的本地图片，不能使用网络图片或非 ***doc*** 目录下的图片。以下是相对路径的引用示例：)

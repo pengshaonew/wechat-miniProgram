@@ -11,6 +11,8 @@
     flex-direction: column;
     justify-content: center;
     z-index: 999999999;
+    border-radius: 16rpx 16rpx 0 0;
+    overflow: hidden;
 }
 
 .mantisChatHeader {
@@ -343,6 +345,8 @@
     display: flex;
     flex-direction: column;
     z-index: 999999999;
+    border-radius: 16rpx 16rpx 0 0;
+    overflow: hidden;
 }
 
 .leavingMessage .header {
@@ -350,7 +354,6 @@
     align-items: center;
     justify-content: space-between;
     background: #06CB94;
-    border-radius: 16rpx 16rpx 0 0;
     height: 100rpx;
 }
 
@@ -456,7 +459,8 @@
 }
 
 .minimizeBox .minimizeIcon {
-    font-size: 50rpx;
+    width: 60rpx;
+    height: 60rpx;
 }
 
 /*--------提醒消息内容浮窗------*/

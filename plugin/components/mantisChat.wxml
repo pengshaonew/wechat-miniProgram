@@ -75,7 +75,8 @@
                                 {{item.formData.formTitle}}
                             </view>
                             <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
-                                <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" class="msgForm" />
+                                <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" />
+<!--                                <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" class="msgForm" />-->
                                 <!--                            <picker bindchange="bindPickerChange" range="{{formItem.fieldForm.option}}" name="picker" wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}" >-->
                                 <!--                                <view class="msgForm">-->
                                 <!--                                    当前选择：1-->
@@ -188,13 +189,22 @@
         <view class="prompt" wx:if="{{!!promptText}}">{{promptText}}</view>
         <view class="mantisInputBox">
 <!--            <view bindtap="chooseImage">图片</view>-->
-            <input disabled="{{disabledInput}}" class="mantisInput" auto-focus placeholder="请输入" bindinput="bindKeyInput" value="{{inputValue}}"/>
+            <input
+                    disabled="{{disabledInput}}"
+                    class="mantisInput"
+                    focus="{{true}}}"
+                    placeholder="请输入"
+                    bindinput="bindKeyInput"
+                    bindconfirm="btnSendMsg"
+                    bindfocus="pageScrollDown"
+                    confirm-type="send"
+                    value="{{inputValue}}"
+            />
             <button bindtap="btnSendMsg" style="background:{{probeData.mbSndBtnColor}}" class="mantisSendBtn">发送</button>
         </view>
-        <view class="mantisVersion" wx:if="{{!mantisChat.chat.isHiddenCopyright}}">技术咨询由螳螂科技提供</view>
+        <view class="mantisVersion" id="mantisVersion" wx:if="{{!mantisChat.chat.isHiddenCopyright}}">技术咨询由螳螂科技提供</view>
     </view>
 </view>
-<audio id="messageAudio" src="{{src}}" />
 <!--留言内容-->
 <view class="leavingMessage" style="display:{{isShowLeave?'flex':'none'}}">
     <view class="header" style="background:{{probeData.mbTitleColor}}">
@@ -225,7 +235,8 @@
         style="display:{{isShowMinimizeBox?'flex':'none'}};background:{{probeData.mbBoxBgColor}};color:{{probeData.mbBoxFontColor}}"
         bindtap="clickFloating"
 >
-    <text class="iconfont icon-fankuixinxi" wx:if="{{!mantisChatNew.unReadMsgNumber}}"></text>
+<!--    <text class="iconfont icon-fankuixinxi" wx:if="{{!mantisChatNew.unReadMsgNumber}}"></text>-->
+    <image src="../utils/img/msgIcon.png" mode="aspectFit" class="minimizeIcon" />
     <text class="minimizeNum" wx:if="{{mantisChatNew.unReadMsgNumber}}">{{mantisChatNew.unReadMsgNumber}}</text>
 </view>
 
