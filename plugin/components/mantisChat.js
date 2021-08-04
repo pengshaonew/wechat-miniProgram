@@ -103,6 +103,9 @@ let iframeShowTmr = null;
 
 let firstShow = true;
 
+// 发送消息按钮
+let sendBtnLoading;
+
 // 评价选项提交按钮
 let btnLoading;
 
@@ -205,7 +208,6 @@ Component({
         isShowMinimizeBox: false,
         isEvaluationModal: false,
         isShowRetain: false,
-        sendBtnLoading: false,
         tipMsg: null,
         parentParams: {},
         inputValue: '',
@@ -778,7 +780,9 @@ Component({
                         msgListNew.push(data);
                         this.setData({
                             msgList: msgListNew
-                        })
+                        }, () => {
+                            _this.scrollDown();
+                        });
                     }
                 }
 
@@ -810,8 +814,8 @@ Component({
                         data.timeStr = this.dateFormat(new Date(data.time), "yyyy-MM-dd hh:mm:ss");
                     }
                 } else {
-                    data.msg = this.msgReplaceImgWidth(data.msg);
                     data.msg = this.msgReplaceQrCode(data.msg);
+                    data.msg = this.msgReplaceImgWidth(data.msg);
                     // 排除自动发送的消息msgType 手动发送消息 M  其他消息 A
                     if (!!msgType && msgType !== 'A') {
                         mantisChatNew.chat.agentSent = true;
@@ -949,7 +953,9 @@ Component({
                         msgListNew.push(f);
                         this.setData({
                             msgList: msgListNew
-                        })
+                        }, () => {
+                            this.scrollDown();
+                        });
                     }
                     if (say_from !== 'V' && say_from !== 'A') {
                         continue;
@@ -967,8 +973,8 @@ Component({
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
-                        f.msg = this.msgReplaceImgWidth(f.msg);
                         f.msg = this.msgReplaceQrCode(f.msg);
+                        f.msg = this.msgReplaceImgWidth(f.msg);
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1012,7 +1018,7 @@ Component({
                 this.setData({
                     msgList: msgListNew
                 }, () => {
-                    this.scrollDown(null, msgId);
+                    this.scrollDown();
                 })
                 if (mms.length) {
                     let hisLastMsg = mms[mms.length - 1];
@@ -1067,8 +1073,8 @@ Component({
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
-                        f.msg = this.msgReplaceImgWidth(f.msg);
                         f.msg = this.msgReplaceQrCode(f.msg);
+                        f.msg = this.msgReplaceImgWidth(f.msg);
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1135,7 +1141,7 @@ Component({
                 mantisChatNew.sgId = data.msg.sgId;
                 mantisChatNew.chat.isRobot = data.msg.isRobot;
                 let endTime = new Date().getTime();
-                console.info("time:" + (endTime - beginTime) + "," + mantisChat.chatId);
+                console.info("time:" + (endTime - beginTime) + "," + mantisChatNew.chatId);
                 lastVisitorMsgTime = new Date().getTime();
                 // show chat window
                 this.showChat();
@@ -1158,7 +1164,7 @@ Component({
                         mantisChatNew.chat.agentName = agentName;
                     }
                     if (agentPhone) {
-                        mantisChatNew.chat.agentPhone = agentName;
+                        mantisChatNew.chat.agentPhone = agentPhone;
                     }
                 } catch (e) {
 
@@ -1211,9 +1217,9 @@ Component({
                 mantisChatNew.chat.vistorSent = false;
                 mantisChatNew.chat.agentSent = false;
                 pomelo.disconnect();
-                this._requestChat();
-
-                this.handleMantisChat(mantisChatNew);
+                this.handleMantisChat(mantisChatNew,()=>{
+                    this._requestChat();
+                });
             });
 
             // 撤回消息
@@ -1380,8 +1386,8 @@ Component({
                             let f = m[j];
                             let msg = f.msg;
                             if (!!msg) {
-                                f.msg = this.msgReplaceImgWidth(f.msg);
                                 f.msg = this.msgReplaceQrCode(f.msg);
+                                f.msg = this.msgReplaceImgWidth(f.msg);
                                 if (!isSent) {
                                     let dataTime = Date.now();
                                     if (mantisChatNew.mantisTtimeDifference) {
@@ -1391,7 +1397,9 @@ Component({
                                     f.timeStr = this.dateFormat(timeStr, "yyyy-MM-dd hh:mm:ss");
                                     f.say_from = 'A';
                                     msgListNew.push(f);
-                                    this.setData({msgList: msgListNew});
+                                    this.setData({msgList: msgListNew}, () => {
+                                        this.scrollDown();
+                                    });
                                     isSent = true;
                                 } else {
                                     welcomeMsgs.push(f);
@@ -1460,6 +1468,8 @@ Component({
                         for (let j = 0; j < m.length; j++) {
                             let f = m[j];
                             if (!!f.msg) {
+                                f.msg = this.msgReplaceQrCode(f.msg);
+                                f.msg = this.msgReplaceImgWidth(f.msg);
                                 if (!!f.msg) {
                                     welcomeMsgs.push(f);
                                 }
@@ -1937,18 +1947,18 @@ Component({
         },
         // 振动提醒
         vibrate() {
-            wx.vibrateShort({type: 'medium'});
+            wx.vibrateLong({
+                type: 'medium'
+            });
         },
         // 声音提醒
         playSound() {
             this.messageAudio.play();
         },
         btnSendMsg: function () {
-            const {inputValue, mantisChat, sendBtnLoading} = this.data;
-            if (inputValue && sendBtnLoading) {
-                this.setData({
-                    sendBtnLoading:true
-                });
+            const {inputValue, mantisChat} = this.data;
+            if (inputValue && !sendBtnLoading) {
+                sendBtnLoading = true;
                 if(mantisChat.chat.connected){
                     this.sendMessage(inputValue);
                 }else{
@@ -2005,7 +2015,7 @@ Component({
                 content: msgContent,
                 sgId: mantisChat.sgId,
                 chatId: mantisChat.chatId,
-                agentId: 'tantou@7011',
+                agentId: mantisChat.chat.agent.agentId,
                 target: "",
                 type: "text",
                 projectId: probeData.projectId,
@@ -2016,9 +2026,9 @@ Component({
                 uidClient: 'SDK_MINI_PROGRAM'
             }, data => {
                 this.setData({
-                    inputValue: '',
-                    sendBtnLoading:false
-                });
+                    inputValue: ''
+                })
+                sendBtnLoading = false;
                 setTimeout(function () {
                     _this.showAgentKeyIn();
                 }, 600);
@@ -2040,7 +2050,9 @@ Component({
             });
             this.setData({
                 msgList: msgListNew
-            })
+            }, () => {
+                this.scrollDown();
+            });
             this.sendMessage(JSON.stringify({
                 isChoiceRes: true,
                 displayMsg: label,
@@ -2355,7 +2367,9 @@ Component({
             msgListNew = msgListNew.filter(item => (item._id || item.msgId) !== msgId);
             this.setData({
                 msgList: msgListNew
-            })
+            }, () => {
+                this.scrollDown();
+            });
             wx.showToast({
                 title: '提交成功'
             })
@@ -2400,16 +2414,18 @@ Component({
             if (mantisNew.deviceMobile) {
                 if (triggerRemainTime) {
                     retainRemainTimer = setInterval(function () {
-                        if (!mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag')) {
+                        if (
+                            !_this.data.mantis.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') ||
+                            _this.data.mantis.displayCountActual >= _this.data.mantis.displayCount
+                        ) {
                             retainRemainTimer && clearInterval(retainRemainTimer);
                             return;
                         }
                         if (
-                            mantisNew.displayIntervalFlag &&
-                            mantisNew.displayCountActual < mantisNew.displayCount &&
+                            _this.data.mantis.displayIntervalFlag &&
                             !_this.data.isShowChat &&
                             !_this.data.isShowLeave &&
-                            !mantisNew.isShowRetain
+                            !_this.data.isShowRetain
                         ) {
                             _this.mantisShowRetain();
                         }
@@ -2934,7 +2950,9 @@ Component({
             });
         },
         msgReplaceQrCode(msg){
-            /mantisWechatQrCode/.test(msg) && (msg = msg.replace(/<img\s?class\s?=\s?'?"?mantisWechatQrCode'?"?[^>]*>/g, ''));
+            if(/mantisWechatQrCode/.test(msg)){
+                msg = msg.replace(/<img\s?class\s?=\s?'?"?mantisWechatQrCode'?"?[^>]*>/g, '')
+            }
             return msg;
         },
         msgReplaceImgWidth(msg){
