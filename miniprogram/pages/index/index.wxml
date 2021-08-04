@@ -11,7 +11,5 @@
         id="mantisChat"
         companyId="3403"
         probeId="60ff7b7942e6824c77cf5c70"
-        phone="13123123123"
-        chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3401&mpid=60f6335542e6827c32c4d8bb"
-        param="{{param}}"
+        chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3403&mpid=60ff7b7942e6824c77cf5c70"
 />

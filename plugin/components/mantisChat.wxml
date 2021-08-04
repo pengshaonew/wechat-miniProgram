@@ -57,7 +57,7 @@
                     <view class="msgItem msgItemR" wx:if="{{item.say_from === 'V'}}">
                         <view class="msgItemTime">{{item.timeStr}}</view>
                         <view class="msgItemDown">
-                            <view class="msgCon">
+                            <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                                 <rich-text nodes="{{item.msg}}" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
@@ -136,7 +136,7 @@
                 <view class="msgItem msgItemR" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'V'}}">
                     <view class="msgItemTime">{{item.timeStr}}</view>
                     <view class="msgItemDown">
-                        <view class="msgCon">
+                        <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                             <rich-text nodes="{{item.msg}}" />
                         </view>
                         <image class="agentHead" mode="aspectFit"
@@ -154,7 +154,7 @@
                             {{item.formData.formTitle}}
                         </view>
                         <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
-                            <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" class="msgForm" />
+                            <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" />
 <!--                            <picker bindchange="bindPickerChange" range="{{formItem.fieldForm.option}}" name="picker" wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}" >-->
 <!--                                <view class="msgForm">-->
 <!--                                    当前选择：1-->
@@ -198,9 +198,10 @@
                     bindconfirm="btnSendMsg"
                     bindfocus="pageScrollDown"
                     confirm-type="send"
+                    cursor-spacing="35"
                     value="{{inputValue}}"
             />
-            <button bindtap="btnSendMsg" style="background:{{probeData.mbSndBtnColor}}" class="mantisSendBtn">发送</button>
+            <button bindtap="btnSendMsg" disabled="{{!inputValue}}" style="background:{{probeData.mbSndBtnColor}}" class="mantisSendBtn">发送</button>
         </view>
         <view class="mantisVersion" id="mantisVersion" wx:if="{{!mantisChat.chat.isHiddenCopyright}}">技术咨询由螳螂科技提供</view>
     </view>
@@ -256,9 +257,9 @@
 </view>
 
 <!--邀请框-->
-<view class="mantisInvitation" style="display:{{isShowInvite?'block':'none'}}">
+<view class="mantisInvitation" style="display:{{isShowInvite?'block':'none'}};margin-left: -{{probeData.mbInviteWidth / 2 + 'px'}};left:50%">
     <image bindtap="hideInviteDiv" class="closeInviteIcon" src="../utils/img/closeInviteIcon.png" />
-    <image class="invitationImg" src="{{probeData.mbInviteUrl}}" mode="aspectFit" style="width:{{probeData.mbInviteWidth || 600}}rpx" />
+    <image bindtap="clickFloating" class="invitationImg" src="{{probeData.mbInviteUrl}}" mode="widthFix" style="width:{{probeData.mbInviteWidth || 300}}px" />
 </view>
 
 <!--退出挽留-->

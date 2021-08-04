@@ -67,7 +67,6 @@
 .mantisChatMain {
     flex: 1;
     background: #F5F8FA;
-    overflow-y: auto;
     position: relative;
 }
 
@@ -131,7 +130,7 @@
 }
 
 .chat_history {
-    padding: 20rpx 0;
+    padding: 0 0 20rpx 0;
     height: 100%;
     position: absolute;
     top: 0;
@@ -156,7 +155,7 @@
 }
 
 .chat_history .msgItem {
-    margin: 20rpx 0;
+    margin: 10rpx 0 40rpx 0;
 }
 
 .chat_history .msgItem .msgItemTime {
@@ -206,6 +205,7 @@
     word-break: break-word;
     line-height: 20px;
     max-width: calc(100% - 240rpx);
+    overflow: hidden;
 }
 
 .chat_history .msgItemL .msgItemDown .msgCon {
@@ -217,6 +217,7 @@
 .chat_history .msgItemR .msgItemDown .msgCon {
     border-radius: 4px 0 4px 4px;
     margin-left: 50rpx;
+    color:#fff;
 }
 
 .msgItem .msg_btnBox {
@@ -325,6 +326,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.mantisSendBtn[disabled]:not([type]){
+    color: #ffffff;
+    opacity: .6;
 }
 
 .mantisVersion {
@@ -530,7 +536,6 @@
 .mantisInvitation {
     position: fixed;
     z-index: 999999999;
-    left: 80rpx;
     top: 50%;
     transform: translateY(-50%);
 }
