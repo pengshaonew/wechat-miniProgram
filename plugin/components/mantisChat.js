@@ -17,11 +17,6 @@ let agentKeyInStep = 0;
 // 输入状态维持的最大时间
 let agentKeyInLimit = 0;
 
-//最后输出时间的时间点, 用来控制日期显示
-let lastOutputDate;
-let today = new Date().getDay();
-let LEAVE_TITLE = '在线留言';
-
 //前端收到错误提示计数
 let pomeloErrorCount = 0;
 
@@ -84,8 +79,7 @@ let robotAutoMsgCount = 0;
 let mbRemoveTag;
 //init ttl time
 let beginTime = new Date().getTime();
-// 对话发起页面地址，回退使用的url
-let page_url = null;
+
 // 欢迎语剩余的消息
 let welcomeMsgs = [];
 // 欢迎语发送定时器
@@ -97,11 +91,6 @@ let openMaxImg = false;
 let closeMaxImg = false;
 // 访客未输入计时器
 let cutOffTimer = null;
-
-let iframeHideTmr = null;
-let iframeShowTmr = null;
-
-let firstShow = true;
 
 // 发送消息按钮
 let sendBtnLoading;
@@ -270,7 +259,7 @@ Component({
     },
 
     methods: {
-        showChat(autoFlag, foreShowChat) {
+        showChat(autoFlag) {
             if (autoShowHideChatTimer) {
                 clearTimeout(autoShowHideChatTimer);
                 autoShowHideChatTimer = null;
@@ -916,7 +905,7 @@ Component({
                 console.log('咨询师离线');
                 const _this = this;
                 setTimeout(function () {
-                    let mantisChatNew = _this.data.mantisChat;
+                    let mantisChatNew = {..._this.data.mantisChat};
                     mantisChatNew.chat.connected = false;
                     _this.handleMantisChat(mantisChatNew);
                     _this._requestChat();
@@ -926,7 +915,7 @@ Component({
             // 未关闭对话的历史消息
             pomelo.on('ON_HIS_MSG', data => {
                 let mantisChatNew = {...this.data.mantisChat};
-                let msgListNew = [...this.data.msgList];
+                let msgListNew = [];
                 allMessages = [];
                 let msgs = data.msg;
                 if (!msgs || msgs.length === 0) {
@@ -1044,7 +1033,6 @@ Component({
 
             // 收到历史消息
             pomelo.on('ON_HIS_CHAT_MSG', data => {
-                console.log('收到历史消息', data);
                 const {probeData} = this.data;
                 let hisMsgListNew = [];
                 if (probeData.notShowHistoryMessage) {
@@ -1143,8 +1131,6 @@ Component({
                 let endTime = new Date().getTime();
                 console.info("time:" + (endTime - beginTime) + "," + mantisChatNew.chatId);
                 lastVisitorMsgTime = new Date().getTime();
-                // show chat window
-                this.showChat();
                 // 启用输入框
                 this.enableInput();
                 //clear reminder count
@@ -1182,7 +1168,10 @@ Component({
 
                 this.cutOff();
                 this.resendContact();
-                this.handleMantisChat(mantisChatNew);
+                this.handleMantisChat(mantisChatNew, () => {
+                    // show chat window
+                    this.showChat();
+                });
             })
 
             // 收到对话转接请求
@@ -1575,8 +1564,8 @@ Component({
                 return v.toString(16);
             });
         },
+        // 发送通知消息
         sendAiMsg(content) {
-            // 发送通知消息
             const mantisChat = this.data.mantisChat;
             let route = "chat.chatHandler.sendAIMsg";
             if (mantisChat.chat.connected) {
@@ -1618,7 +1607,7 @@ Component({
                 this.setData({
                     scrollTop: 999999
                 })
-            }, 0);
+            }, 200);
         },
         // 清理历史聊天信息
         clearHisMsg() {
@@ -1859,7 +1848,7 @@ Component({
         },
         // 收到咨询师消息后的处理逻辑
         onMessageArrive(msg) {
-            const {mantisChat, isShowChat, probeData} = this.data;
+            const {isShowChat, probeData} = this.data;
             let notifyMethod = probeData.mbMsgNotifyMethod || "vibrate";
             if (notifyMethod === "vibrate") {
                 this.vibrate();
@@ -2040,6 +2029,7 @@ Component({
                 }
             });
         },
+        // 发送选择性话术按钮消息
         sendChoiceMsg(e) {
             let {btnId, label, msgid} = e.target.dataset;
             let msgListNew = this.data.msgList.map(item => {
@@ -2074,6 +2064,7 @@ Component({
                 cb && cb()
             })
         },
+        // 监听输入框input事件
         bindKeyInput: function (e) {
             const {companyId} = this.data;
             //取消消息提示
@@ -2136,12 +2127,6 @@ Component({
 
             this.handleMantisChat(mantisChatNew);
         },
-        pageScrollDown() {
-            // wx.pageScrollTo({
-            //     scrollTop: 0,
-            //     duration: 0
-            // });
-        },
         callPhone: function (e) {
             let phone = e.target.dataset.phone;
             wx.makePhoneCall({
@@ -2191,6 +2176,7 @@ Component({
                 }
             })
         },
+        // 点击悬浮球、提示消息列表、邀请框
         clickFloating() {
             const {mantis} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
@@ -2232,8 +2218,8 @@ Component({
                 disabledInput: true
             })
         },
+        // 发送评价结果
         handleEvaluation(e) {
-            // 发送评价结果
             if (!btnLoading) {
                 let code = e.target.dataset.code;
                 let {mantisChat, companyId} = this.data;
@@ -2431,25 +2417,25 @@ Component({
                         }
                     }, triggerRemainTime * 1000)
                 }
-                if (mantisNew.triggerPageScroll) {
+                /*if (mantisNew.triggerPageScroll) {
                     // 滚动触发
-                    // let scrollHeight = $(document).height() - $(window).height();
-                    // let targetVal = (mantisNew.triggerPageScroll / 100 * scrollHeight).toFixed(0);
-                    // if(scrollHeight > 200){
-                    //     $(document).scroll(function () {
-                    //         if((mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') === 'Y') || _this.data.isShowChat) return;
-                    //         let pageScroll = $(document).scrollTop();
-                    //         if (
-                    //             mantisNew.displayIntervalFlag &&
-                    //             mantisNew.displayCountActual < mantisNew.displayCount &&
-                    //             !mantisNew.isShowRetain &&
-                    //             pageScroll > targetVal
-                    //         ) {
-                    //             _this.mantisShowRetain();
-                    //         }
-                    //     })
-                    // }
-                }
+                    let scrollHeight = $(document).height() - $(window).height();
+                    let targetVal = (mantisNew.triggerPageScroll / 100 * scrollHeight).toFixed(0);
+                    if(scrollHeight > 200){
+                        $(document).scroll(function () {
+                            if((mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') === 'Y') || _this.data.isShowChat) return;
+                            let pageScroll = $(document).scrollTop();
+                            if (
+                                mantisNew.displayIntervalFlag &&
+                                mantisNew.displayCountActual < mantisNew.displayCount &&
+                                !mantisNew.isShowRetain &&
+                                pageScroll > targetVal
+                            ) {
+                                _this.mantisShowRetain();
+                            }
+                        })
+                    }
+                }*/
             }
         },
         mantisShowRetain() {

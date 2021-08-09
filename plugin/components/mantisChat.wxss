@@ -68,6 +68,8 @@
     flex: 1;
     background: #F5F8FA;
     position: relative;
+    border-top: 10rpx solid #F5F8FA;
+    border-bottom: 10rpx solid #F5F8FA;
 }
 
 /*--------评价-------*/
@@ -161,7 +163,7 @@
 .chat_history .msgItem .msgItemTime {
     color: #A1A6AB;
     font-size: 24rpx;
-    margin-bottom: 10rpx;
+    margin-bottom: 16rpx;
     text-align: center;
 }
 
