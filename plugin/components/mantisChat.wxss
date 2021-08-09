@@ -279,6 +279,10 @@
     align-items: center;
 }
 
+.chat_history .msgForm .pickerPlaceholder{
+    color: #757575;
+}
+
 .chat_history .msgFormBtn{
     height: 64rpx;
     background: #0095FF;

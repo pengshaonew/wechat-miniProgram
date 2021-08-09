@@ -226,7 +226,8 @@ Component({
             request: {},
             paras: {}
         },
-        scrollBottomId: ''
+        scrollBottomId: '',
+        visitorForm:{}
     },
     observers: {
         'phone': function (phone) {
@@ -838,6 +839,7 @@ Component({
                         let timeStr = new Date(dataTime);
                         if (say_from === 'A' && data.msgType === 'F') {   // 表单消息
                             data.formData = JSON.parse(msg);
+                            this.savePickerRange(data);
                             msg = '收到新消息';
                         }
                         if (msg.indexOf("isChoiceMsg") !== -1) {  //选择性消息
@@ -976,6 +978,7 @@ Component({
                         }
                         if (f.msgType === 'F') {   // 表单消息
                             f.formData = JSON.parse(f.msg);
+                            this.savePickerRange(f);
                         }
                     }
                     msgListNew.push(f);
@@ -1075,6 +1078,7 @@ Component({
                         }
                         if (f.msgType === 'F') {   // 表单消息
                             f.formData = JSON.parse(f.msg);
+                            this.savePickerRange(f);
                         }
                     }
                     hisMsgListNew.push(f);
@@ -2311,12 +2315,15 @@ Component({
             console.log('form发生了submit事件，携带数据为：', e.detail.value);
             let msgListNew = [...this.data.msgList];
             let msgId = e.target.dataset.msgid;
-            let formObj = e.detail.value;
+            let formValues = e.detail.value;
             let msgCon = '';
-            let keyArray = Object.keys(formObj);
+            let keyArray = Object.keys(formValues);
             let errFlag = null;
             keyArray.forEach(item => {
-                let val = formObj[item];
+                let val = formValues[item];
+                if(val && this.data.visitorForm[msgId] && this.data.visitorForm[msgId][item]){
+                    val = this.data.visitorForm[msgId][item][val];
+                }
                 switch (item) {
                     case '手机号':
                         if (!/^1[3-9]\d{9}$/.test(val)) {
@@ -2613,10 +2620,32 @@ Component({
                 }
             });
         },
+        savePickerRange(msgData) {
+            if(msgData.is_submit === 'N'){
+                msgData.formData.fieldList.forEach(item => {
+                    if(item.fieldForm.fieldType === "OPTION"){
+                        let msgId = msgData.msgId || msgData._id;
+                        let pickerName = item.name;
+                        let pickerList = item.fieldForm.option;
+                        let visitorForm = {...this.data.visitorForm};
+                        if(!visitorForm[msgId]){
+                            visitorForm[msgId] = {};
+                        }
+                        visitorForm[msgId][pickerName] = pickerList;
+                        this.setData({
+                            visitorForm
+                        })
+                    }
+                });
+            }
+        },
         bindPickerChange: function (e) {
-            console.log('picker发送选择改变，携带值为', e.detail.value)
+            console.log('picker发送选择改变，携带值为', e.detail.value);
+            let {msgid,name} = e.target.dataset;
+            let visitorForm = {...this.data.visitorForm};
+            visitorForm[msgid][name + 'value'] = visitorForm[msgid][name][e.detail.value];
             this.setData({
-                index: e.detail.value
+                visitorForm
             })
         },
         // 表单留言
