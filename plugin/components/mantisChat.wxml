@@ -195,8 +195,14 @@
     </view>
     <view class="mantisFooter">
         <view class="prompt" wx:if="{{!!promptText}}">{{promptText}}</view>
+        <view class="emojiBox" wx:if="{{isEmojiBox}}">
+            <block wx:for="{{emojiList}}">
+                <image data-src="{{item}}" src="{{item}}" class="emojiItem" bindtap="sendEmoji" />
+            </block>
+        </view>
         <view class="mantisInputBox">
-<!--            <view bindtap="chooseImage">图片</view>-->
+            <image class="img_btnNew" mode="aspectFit" bindtap="handleEmojiBox" src="../utils/img/emoji_btnNew.png" />
+            <image class="img_btnNew" mode="aspectFit" bindtap="chooseImage" src="../utils/img/img_btnNew.png" />
             <input
                     disabled="{{disabledInput}}"
                     class="mantisInput"
@@ -204,7 +210,6 @@
                     placeholder="请输入"
                     bindinput="bindKeyInput"
                     bindconfirm="btnSendMsg"
-                    bindfocus="pageScrollDown"
                     confirm-type="send"
                     cursor-spacing="35"
                     value="{{inputValue}}"
@@ -219,7 +224,6 @@
     <view class="header" style="background:{{probeData.mbTitleColor}}">
         <text>在线留言</text>
         <view class="headerR">
-<!--            <image wx:if="{{!!mantisChat.chat.agentPhone && !probeData.callPhoneNumberFlag}}" data-phone="{{mantisChat.chat.agentPhone}}" bindtap="callPhone" class="telIcon" src="https://test.bjmantis.net/chat/t1/mobile/img/tel.png" />-->
             <image wx:if="{{probeData.mbAllowClose}}" bindtap="hideResvDiv" class="closeIcon" src="../utils/img/backBtn.png" />
         </view>
     </view>

@@ -197,6 +197,7 @@ Component({
         isShowMinimizeBox: false,
         isEvaluationModal: false,
         isShowRetain: false,
+        isEmojiBox: false,
         tipMsg: null,
         parentParams: {},
         inputValue: '',
@@ -227,7 +228,43 @@ Component({
             paras: {}
         },
         scrollBottomId: '',
-        visitorForm:{}
+        visitorForm:{},
+        emojiList: [
+            'https://probe.bjmantis.net/chat/emoji/2020001.png',
+            'https://probe.bjmantis.net/chat/emoji/2020002.png',
+            'https://probe.bjmantis.net/chat/emoji/2020003.png',
+            'https://probe.bjmantis.net/chat/emoji/2020004.png',
+            'https://probe.bjmantis.net/chat/emoji/2020005.png',
+            'https://probe.bjmantis.net/chat/emoji/2020006.png',
+            'https://probe.bjmantis.net/chat/emoji/2020007.png',
+            'https://probe.bjmantis.net/chat/emoji/2020008.png',
+            'https://probe.bjmantis.net/chat/emoji/2020009.png',
+            'https://probe.bjmantis.net/chat/emoji/2020010.png',
+            'https://probe.bjmantis.net/chat/emoji/2020011.png',
+            'https://probe.bjmantis.net/chat/emoji/2020012.png',
+            'https://probe.bjmantis.net/chat/emoji/2020013.png',
+            'https://probe.bjmantis.net/chat/emoji/2020014.png',
+            'https://probe.bjmantis.net/chat/emoji/2020015.png',
+            'https://probe.bjmantis.net/chat/emoji/2020016.png',
+            'https://probe.bjmantis.net/chat/emoji/2020017.png',
+            'https://probe.bjmantis.net/chat/emoji/2020018.png',
+            'https://probe.bjmantis.net/chat/emoji/2020019.png',
+            'https://probe.bjmantis.net/chat/emoji/2020020.png',
+            'https://probe.bjmantis.net/chat/emoji/2020021.png',
+            'https://probe.bjmantis.net/chat/emoji/2020022.png',
+            'https://probe.bjmantis.net/chat/emoji/2020023.png',
+            'https://probe.bjmantis.net/chat/emoji/2020024.png',
+            'https://probe.bjmantis.net/chat/emoji/2020025.png',
+            'https://probe.bjmantis.net/chat/emoji/2020026.png',
+            'https://probe.bjmantis.net/chat/emoji/2020027.png',
+            'https://probe.bjmantis.net/chat/emoji/2020028.png',
+            'https://probe.bjmantis.net/chat/emoji/2020029.png',
+            'https://probe.bjmantis.net/chat/emoji/2020030.png',
+            'https://probe.bjmantis.net/chat/emoji/2020031.png',
+            'https://probe.bjmantis.net/chat/emoji/2020032.png',
+            'https://probe.bjmantis.net/chat/emoji/2020033.png',
+            'https://probe.bjmantis.net/chat/emoji/2020034.png',
+        ]
     },
     observers: {
         'phone': function (phone) {
@@ -291,6 +328,7 @@ Component({
                 this.setData({
                     isShowChat: true,
                     tipMsg: null,
+                    isEmojiBox: false
                 });
             });
         },
@@ -436,7 +474,7 @@ Component({
             const {serverUrl, companyId, probeId} = this.data;
             if (companyId && probeId) {
                 startTime = Date.now();
-                console.log('探头请开始', startTime);
+                console.log('探头请求开始', startTime);
                 wx.request({
                     url: serverUrl + companyId + '/' + probeId + '.json?' + Date.now(),
                     data: {},
@@ -512,13 +550,9 @@ Component({
         initChat() {
             const {probeData, companyId} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
-            // chat server address
-            let chat_host = probeData.chatServer;
-            let chat_port = port;
 
             // track server address
             let track_host = probeData.chatServer;
-            let track_port = 80;
             if (!!track_host) {
                 track_host = "tk" + track_host;
             }
@@ -789,6 +823,7 @@ Component({
                     this.clearWelcomeMsgTmr();
                 }
 
+                data.msg = this.msgReplaceImgWidth(data.msg);
                 // 如果是访客消息，更新访客的最后消息时间, 消息已经显示过，所以不用再添加
                 if (data.from === mantisChat.uid) {
                     mantisChatNew.chat.vistorSent = true;
@@ -805,7 +840,6 @@ Component({
                     }
                 } else {
                     data.msg = this.msgReplaceQrCode(data.msg);
-                    data.msg = this.msgReplaceImgWidth(data.msg);
                     // 排除自动发送的消息msgType 手动发送消息 M  其他消息 A
                     if (!!msgType && msgType !== 'A') {
                         mantisChatNew.chat.agentSent = true;
@@ -958,6 +992,7 @@ Component({
                     let dataTime = new Date(f.time).getTime();
                     let time = new Date(dataTime);
                     let say_id = f.say_id;
+                    f.msg = this.msgReplaceImgWidth(f.msg);
                     if (say_from === 'V' && !say_id) {
                         say_id = mantisChatNew.uid;
                     }
@@ -965,7 +1000,6 @@ Component({
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
                         f.msg = this.msgReplaceQrCode(f.msg);
-                        f.msg = this.msgReplaceImgWidth(f.msg);
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1061,11 +1095,11 @@ Component({
 
                     // 如果是挽留提交的消息就不处理
                     if (f.msgType === 'R_S' || f.msgType === 'F_S') continue;
+                    f.msg = this.msgReplaceImgWidth(f.msg);
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
                         f.msg = this.msgReplaceQrCode(f.msg);
-                        f.msg = this.msgReplaceImgWidth(f.msg);
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1992,7 +2026,7 @@ Component({
                 });
             }
         },
-        sendMessage: function (msgContent, msgType) {
+        sendMessage: function (msgContent, msgType, type) {
             const _this = this;
             const {probeData, mantisChat} = this.data;
             const route = "chat.chatHandler.customerSend";
@@ -2010,7 +2044,7 @@ Component({
                 chatId: mantisChat.chatId,
                 agentId: mantisChat.chat.agent.agentId,
                 target: "",
-                type: "text",
+                type: type || "text",
                 projectId: probeData.projectId,
                 companyId: probeData.companyId,
                 channelId: mantisChat.channelId,
@@ -2138,6 +2172,19 @@ Component({
             });
             this.sendAiMsg('该访客点击了"电话咨询"按钮')
         },
+        handleEmojiBox(){
+            let isEmojiBox = this.data.isEmojiBox;
+            this.setData({
+                isEmojiBox: !isEmojiBox
+            })
+        },
+        sendEmoji(e){
+            let src = e.target.dataset.src;
+            if(src){
+                this.sendMessage(`<img class="emojiImg" src="${src}" />`);
+            }
+            this.handleEmojiBox();
+        },
         chooseImage: function () {
             let tempFilePaths = [];
             wx.chooseImage({
@@ -2168,8 +2215,7 @@ Component({
 
                     let data = JSON.parse(res.data);
                     if (data.data) {
-                        console.log(data.data);
-                        this.sendMessage(`<img src="${data.data}" />`);
+                        this.sendMessage(`<img src="${data.data}" />`, null, 'IMG');
                     }
                 },
                 fail: res => {
@@ -2971,10 +3017,10 @@ Component({
             return msg;
         },
         msgReplaceImgWidth(msg){
-            if(!/emojiImg/.test(msg)){
+            if(!/\/chat\/emoji/.test(msg)){
                 msg = msg.replace(/<img/g, '<img style="max-width:100%;"');
             }else{
-                msg = msg.replace(/<img/g, '<img style="width:30px;height:30px"');
+                msg = msg.replace(/<img/g, '<img class="emojiImg" style="width:30px;height:30px"');
             }
             return msg;
         },
