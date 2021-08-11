@@ -439,7 +439,8 @@ Component({
         // 显示留言页
         showResvDiv(reason) {
             this.setData({
-                isShowLeave: true
+                isShowLeave: true,
+                isShowChat: false
             });
             this.sendEntry(reason);
         },
@@ -456,6 +457,7 @@ Component({
             mantisChatNew.chatPageUrl = chatPageUrl;
             if (params.gdt_vid || params.qz_gdt) {
                 mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (params.gdt_vid || params.qz_gdt)
+                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (params.gdt_vid || params.qz_gdt)
             }
             this.handleMantisChat(mantisChatNew);
         },
@@ -729,7 +731,7 @@ Component({
                     areaRuleFlag: probeData.areaRuleFlag, //探头配置地域规则标识
                     assignedAgent: mantisChat.assignedAgent,
                     projectId: probeData.projectId,
-                    ocpcUrl: '',
+                    ocpcUrl: mantisChat.ocpcUrl,
                     reqInfo: this.getRequest(),
                     lpRequestDuration: 0,
                     welcome: {},
@@ -823,7 +825,6 @@ Component({
                     this.clearWelcomeMsgTmr();
                 }
 
-                data.msg = this.msgReplaceImgWidth(data.msg);
                 // 如果是访客消息，更新访客的最后消息时间, 消息已经显示过，所以不用再添加
                 if (data.from === mantisChat.uid) {
                     mantisChatNew.chat.vistorSent = true;
@@ -891,6 +892,7 @@ Component({
                         _this.stopAgentKeyIn();
                     }, 100);
                 }
+                data.msg = this.msgReplaceImgWidth(data.msg);
                 msgListNew.push(data);
                 this.setData({
                     msgList: msgListNew
@@ -992,7 +994,6 @@ Component({
                     let dataTime = new Date(f.time).getTime();
                     let time = new Date(dataTime);
                     let say_id = f.say_id;
-                    f.msg = this.msgReplaceImgWidth(f.msg);
                     if (say_from === 'V' && !say_id) {
                         say_id = mantisChatNew.uid;
                     }
@@ -1039,6 +1040,7 @@ Component({
                             }
                         }
                     }
+                    f.msg = this.msgReplaceImgWidth(f.msg);
                     msgId = f._id || f.msgId;
                 }
                 this.setData({
@@ -1095,7 +1097,6 @@ Component({
 
                     // 如果是挽留提交的消息就不处理
                     if (f.msgType === 'R_S' || f.msgType === 'F_S') continue;
-                    f.msg = this.msgReplaceImgWidth(f.msg);
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
@@ -1115,6 +1116,7 @@ Component({
                             this.savePickerRange(f);
                         }
                     }
+                    f.msg = this.msgReplaceImgWidth(f.msg);
                     hisMsgListNew.push(f);
                 }
                 this.setData({
@@ -1356,7 +1358,7 @@ Component({
                     areaRuleFlag: probe.areaRuleFlag, //探头配置地域规则标识
                     assignedAgent: mantisChat.assignedAgent,
                     projectId: probe.projectId,
-                    ocpcUrl: '',
+                    ocpcUrl: mantisChat.ocpcUrl,
                     reqInfo: _this.getRequest(),
                     lpRequestDuration: enterDuration,
                     welcome: '',
