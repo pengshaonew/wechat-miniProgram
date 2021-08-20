@@ -328,7 +328,8 @@ Component({
                 this.setData({
                     isShowChat: true,
                     tipMsg: null,
-                    isEmojiBox: false
+                    isEmojiBox: false,
+                    isShowRetain: false
                 });
             });
         },
@@ -440,6 +441,7 @@ Component({
         showResvDiv(reason) {
             this.setData({
                 isShowLeave: true,
+                isShowRetain: false,
                 isShowChat: false
             });
             this.sendEntry(reason);
@@ -451,13 +453,13 @@ Component({
             })
         },
         initParams: function () {
-            const {params, uid, chatPageUrl} = this.data;
+            const {params:{miniProgramParams}, uid, chatPageUrl} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.uid = uid || this.handleUid(); // 获取uid
             mantisChatNew.chatPageUrl = chatPageUrl;
-            if (params.gdt_vid || params.qz_gdt) {
-                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (params.gdt_vid || params.qz_gdt)
-                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + '&gdt_vid=' + (params.gdt_vid || params.qz_gdt)
+            if (miniProgramParams) {
+                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + miniProgramParams;
+                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + miniProgramParams;
             }
             this.handleMantisChat(mantisChatNew);
         },
@@ -2629,7 +2631,8 @@ Component({
             let params = {
                 companyId,
                 phone,
-                stayId
+                stayId,
+                vistorId: mantisChat.uid
             };
             if (phoneCode) {
                 params.phoneCode = phoneCode;
@@ -2669,7 +2672,7 @@ Component({
             });
         },
         savePickerRange(msgData) {
-            if(msgData.is_submit === 'N'){
+            if(msgData.is_submit !== 'Y'){
                 msgData.formData.fieldList.forEach(item => {
                     if(item.fieldForm.fieldType === "OPTION"){
                         let msgId = msgData.msgId || msgData._id;

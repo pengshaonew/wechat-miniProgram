@@ -114,8 +114,8 @@
                     </view>
 <!--                    复制微信号、电话咨询按钮-->
                     <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
-                        <text wx:if="{{item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
-                        <text wx:if="{{item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
+                        <text wx:if="{{!probeData.callPhoneNumberFlag && item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
+                        <text wx:if="{{!probeData.copyWechatNumberFlag && item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
                     </view>
                     <!--选择性消息-->
                     <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
@@ -154,7 +154,10 @@
                             {{item.formData.formTitle}}
                         </view>
                         <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
-                            <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" />
+                            <input
+                                    placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}"
+                                    cursor-spacing="100"
+                            />
                             <picker
                                     bindchange="bindPickerChange"
                                     range="{{formItem.fieldForm.option}}"
@@ -287,7 +290,7 @@
                     <input class="mantisTel" name="phoneCode" placeholder="请输入验证码" />
                     <text class="{{codeSending ? 'mantisGetCode codeSending' : 'mantisGetCode'}}" bindtap="sendCode">{{codeSending || '获取验证码'}}</text>
                 </view>
-                <button type="primary" formType="submit"  class="mantisBtnM" style="background:{{probeData.stayConfig.buttonText || '#06CB94'}}">{{probeData.stayConfig.buttonText}}</button>
+                <button type="primary" formType="submit"  class="mantisBtnM" style="background:{{probeData.stayConfig.buttonColor || '#06CB94'}}">{{probeData.stayConfig.buttonText}}</button>
             </form>
         </view>
         <view class="mantisSubmitComplete" wx:if="{{isShowSubmitComplete}}">

@@ -87,10 +87,9 @@ handleSubmit() {
     phone：通过授权获取的访客手机号 
     params: {object} 其他参数
     
-        object 对象有如下参数
+        object 对象有如下参数:
         
-        qz_gdt
-        gdt_vid
+        miniProgramParams 小程序携带参数，如：sku=1077777&platform=1&gdt_vid=wx0ewinbalytptma00&weixinadinfo=20966864.wx0ewinbalytptma00.0.1
         account
         userId
         pageParam 页面埋码参数
