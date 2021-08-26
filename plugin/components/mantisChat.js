@@ -104,7 +104,15 @@ let mantisCodeTimer = null;
 //退出挽留PC
 let retainRemainTimer = null;  //持续停留时间timer
 
+let sendCodeLoading;
+
+// 退出挽留提交按钮
+let retainBtnLoading;
+
 let ttlInterval = null;
+
+// socket是否在连接中
+let isConnecting = false;
 
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
 const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/ig;
@@ -464,10 +472,16 @@ Component({
             this.handleMantisChat(mantisChatNew);
         },
         _requestChat(params) {
+            const {mantisChat} = this.data;
+            let mantisChatNew = {...mantisChat};
+            if(isConnecting){
+                return;
+            }
+            isConnecting = true;
+            this.handleMantisChat(mantisChatNew);
             this.setData({
                 parentParams: params || {}
             })
-            const {mantisChat} = this.data;
             if (!mantisChat.chat.connected) { //  如果没有发起会话再发请求
                 this.queryEntry();
             } else {
@@ -881,6 +895,7 @@ Component({
                         }
                         if (msg.indexOf("isChoiceMsg") !== -1) {  //选择性消息
                             data.choiceMsg = JSON.parse(msg);
+                            msg = '收到新消息';
                         }
                         if (!data.timeStr) {
                             data.timeStr = this.dateFormat(new Date(data.time), "yyyy-MM-dd hh:mm:ss");
@@ -907,7 +922,6 @@ Component({
                 console.log('disconnect');
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = false;
-                mantisChatNew.chat.isConnecting = false;
                 clearInterval(reminderTmr);
                 clearInterval(agentTimedTimer);
                 reminderTmr = null;
@@ -926,7 +940,7 @@ Component({
                 let mantisChatNew = {...this.data.mantisChat};
                 pomeloErrorCount++;
                 mantisChatNew.chat.connected = false;
-                mantisChatNew.chat.isConnecting = false;
+                isConnecting = false;
                 pomelo.disconnect();
                 clearInterval(reminderTmr);
                 clearInterval(agentTimedTimer);
@@ -1134,7 +1148,7 @@ Component({
                 console.log('咨询师未匹配');
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = false;
-                mantisChatNew.chat.isConnecting = false;
+                isConnecting = false;
                 this.handleMantisChat(mantisChatNew);
                 console.warn("NO_AGENT_AVAILABLE");
                 this.showResvDiv("no_agent");
@@ -1151,7 +1165,7 @@ Component({
                 console.log('被 T');
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = false;
-                mantisChatNew.chat.isConnecting = false;
+                isConnecting = false;
                 pomelo.disconnect();
                 console.info("onKick" + JSON.stringify(data));
                 this.handleMantisChat(mantisChatNew);
@@ -1164,7 +1178,7 @@ Component({
                 const {parentParams} = this.data;
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = true;
-                mantisChatNew.chat.isConnecting = false;
+                isConnecting = false;
                 mantisChatNew.chat.agent = data.msg.agent;
                 mantisChatNew.chatId = data.msg.chatId;
                 mantisChatNew.chat.channelId = data.msg.channelId;
@@ -1243,7 +1257,7 @@ Component({
                     mantisChatNew.assignedAgent = targetAgentId;
                 }
                 mantisChatNew.mode = "TRANSFER";
-                mantisChatNew.chat.isConnecting = false;
+                isConnecting = false;
                 mantisChatNew.chat.connected = false;
                 mantisChatNew.chat.vistorSent = false;
                 mantisChatNew.chat.agentSent = false;
@@ -1337,7 +1351,6 @@ Component({
             const _this = this;
             const {probeData, mantisChat, params} = this.data;
             allMessages = [];
-            // mantisChat.chat.isConnecting = true;
 
             let probe = probeData;
             let promotionMsg = null;
@@ -1419,6 +1432,9 @@ Component({
                             if (!!msg) {
                                 f.msg = this.msgReplaceQrCode(f.msg);
                                 f.msg = this.msgReplaceImgWidth(f.msg);
+                                if (msg.indexOf("isChoiceMsg") !== -1) {  //选择性消息
+                                    f.choiceMsg = JSON.parse(f.msg);
+                                }
                                 if (!isSent) {
                                     let dataTime = Date.now();
                                     if (mantisChatNew.mantisTtimeDifference) {
@@ -1910,7 +1926,7 @@ Component({
                 this.showChat('AUTO');
             }
         },
-        // 网络恢复后消息重发
+        // 会话连接后消息重发
         resendMsg() {
             const mantisChat = this.data.mantisChat;
             if (!!mantisChat.chatId) {
@@ -2559,6 +2575,8 @@ Component({
         },
         //  获取验证码
         sendCode() {
+            if(sendCodeLoading) return;
+            sendCodeLoading = true;
             const {retainPhone, probeData, companyId} = this.data;
             let url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/smsApi/sendVerificationCode.do";
             if (!/^1[3-9]\d{9}$/.test(retainPhone)) {
@@ -2566,6 +2584,7 @@ Component({
                     title: '请输入正确的手机号',
                     icon: 'error'
                 })
+                sendCodeLoading = false;
                 return;
             }
             this.codeTiming();
@@ -2578,6 +2597,7 @@ Component({
                 data: params,
                 method: 'POST',
                 success: res => {
+                    sendCodeLoading = false;
                     if (res.data && res.data.flag === 1) {
                         wx.showToast({
                             title: '发送成功',
@@ -2585,6 +2605,7 @@ Component({
                     }
                 },
                 fail: () => {
+                    sendCodeLoading = false;
                     // 提交失败
                     wx.showToast({
                         title: '发送失败',
@@ -2615,7 +2636,8 @@ Component({
         retainSubmit(e) {
             const {mantisChat, probeData, companyId} = this.data;
             let values = e.detail.value;
-            console.log(values);
+            if(retainBtnLoading) return;
+            retainBtnLoading = true;
             let url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/chatapi/staySubmit.do";
             let phone = values.phone;
             let phoneCode = values.phoneCode;
@@ -2625,6 +2647,7 @@ Component({
                     title: '请输入正确的手机号',
                     icon: 'error'
                 })
+                retainBtnLoading = false;
                 return;
             }
 
@@ -2643,6 +2666,7 @@ Component({
                 data: params,
                 method: 'POST',
                 success: res => {
+                    retainBtnLoading = false;
                     if (res.data && res.data.flag === 1) {
                         wx.setStorage({
                             key: 'mantisSendTelFlag',
@@ -2663,6 +2687,7 @@ Component({
                     }
                 },
                 fail: () => {
+                    retainBtnLoading = false;
                     // 提交失败
                     wx.showToast({
                         title: '提交失败',
@@ -3023,7 +3048,7 @@ Component({
         },
         msgReplaceImgWidth(msg){
             if(!/\/chat\/emoji/.test(msg)){
-                msg = msg.replace(/<img/g, '<img style="max-width:100%;"');
+                msg = msg.replace(/<img/g, '<img style=\\"max-width:100%;\\"');
             }else{
                 msg = msg.replace(/<img/g, '<img class="emojiImg" style="width:30px;height:30px"');
             }

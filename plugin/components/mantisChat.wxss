@@ -262,6 +262,7 @@
     margin-bottom: 20rpx;
     text-align: center;
     line-height: 40rpx;
+    word-break: break-word;
 }
 
 .chat_history .msgForm{
