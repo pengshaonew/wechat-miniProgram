@@ -9,7 +9,7 @@
 {
     "plugins": {
         "mantisChat": {
-            "version": "1.0.1",
+            "version": "1.0.7",
             "provider": "wxc6e2bf2f6fc2e53a"
         }
     }
@@ -48,19 +48,19 @@ handleSubmit() {
             area,qq,weChat会显示在留言查询数据对应字段的位置
             
         formValue : {
-               phone: 13123123123,
-               name: '张三',
-               content:'备注内容',
-               others: {
-                   area:'地域值',
-                   qq:QQ,
-                   weChat:微信,
-                   customerFieldMap:{  // 自定义字段,此对象中的字段如果和系统中自定义字段对应上就会显示在转客后对应字段的位置，如果对应不上会显示在转客后的备注里
-                       年龄:24,
-                       兴趣:运动
-                   }
-               }
-           }
+            phone: 16656789088,
+            name: '张三',
+            content:'备注内容',
+            others: {
+                area:'地域值',
+                qq:'QQ',
+                weChat:'微信',
+                customerFieldMap:{  // 自定义字段,此对象中的字段如果和系统中自定义字段对应上就会显示在转客后对应字段的位置，如果对应不上会显示在转客后的备注里
+                    "年龄":'24',
+                    "兴趣":'运动'
+                }
+            }
+        }
    * */
     let formValue = {
         phone: 13123123123

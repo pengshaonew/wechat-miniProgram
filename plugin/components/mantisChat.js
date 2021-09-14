@@ -236,7 +236,7 @@ Component({
             paras: {}
         },
         scrollBottomId: '',
-        visitorForm:{},
+        visitorForm: {},
         emojiList: [
             'https://probe.bjmantis.net/chat/emoji/2020001.png',
             'https://probe.bjmantis.net/chat/emoji/2020002.png',
@@ -272,7 +272,8 @@ Component({
             'https://probe.bjmantis.net/chat/emoji/2020032.png',
             'https://probe.bjmantis.net/chat/emoji/2020033.png',
             'https://probe.bjmantis.net/chat/emoji/2020034.png',
-        ]
+        ],
+        ipInfo: {},
     },
     observers: {
         'phone': function (phone) {
@@ -351,12 +352,12 @@ Component({
                 pomelo.request(route, {
                     //消息接口
                     content: "聊窗收起",
-                    chatId: mantisChat.chat.chatId,
+                    chatId: mantisChat.chatId,
                     target: "",
                     type: "Y",
                     from: mantisChat.uid,
                     companyId: probeData.companyId,
-                    channelId: mantisChat.chat.channelId
+                    channelId: mantisChat.channelId
                 }, function (data) {
                 });
 
@@ -461,7 +462,7 @@ Component({
             })
         },
         initParams: function () {
-            const {params:{miniProgramParams}, uid, chatPageUrl} = this.data;
+            const {params: {miniProgramParams}, uid, chatPageUrl} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.uid = uid || this.handleUid(); // 获取uid
             mantisChatNew.chatPageUrl = chatPageUrl;
@@ -474,25 +475,25 @@ Component({
         _requestChat(params) {
             const {mantisChat} = this.data;
             let mantisChatNew = {...mantisChat};
-            if(isConnecting){
+            if (isConnecting) {
                 return;
             }
-            isConnecting = true;
-            this.handleMantisChat(mantisChatNew);
             this.setData({
                 parentParams: params || {}
             })
-            if (!mantisChat.chat.connected) { //  如果没有发起会话再发请求
-                this.queryEntry();
-            } else {
-                this.showChat()
-            }
+            this.handleMantisChat(mantisChatNew, () => {
+                if (!mantisChat.chat.connected) { //  如果没有发起会话再发请求
+                    isConnecting = true;
+                    this.queryEntry();
+                } else {
+                    this.showChat()
+                }
+            });
         },
         loadProbeData() {
             const {serverUrl, companyId, probeId} = this.data;
             if (companyId && probeId) {
                 startTime = Date.now();
-                console.log('探头请求开始', startTime);
                 wx.request({
                     url: serverUrl + companyId + '/' + probeId + '.json?' + Date.now(),
                     data: {},
@@ -500,6 +501,9 @@ Component({
                     success: res => {
                         console.log('探头请求时长：', Date.now() - startTime);
                         if (res && res.data) {
+                            if (res.data.mbPromTxt) {
+                                res.data.mbPromTxt = this.msgReplaceImgWidth(res.data.mbPromTxt)
+                            }
                             this.setData({
                                 probeData: res.data,
                                 isShowMinimizeBox: res.data.mbIsShowMinimize
@@ -511,6 +515,7 @@ Component({
                             this.mantisSetupActiveTTl();
                         }
                         this.loadConfig();
+                        this.getIp();
                     },
                     fail: () => {
                         console.error("fail to load p, try to load & use default config");
@@ -531,11 +536,13 @@ Component({
                     } else {
                         let mantisChatNew = {...this.data.mantisChat};
                         mantisChatNew.chat.hasChat = false;
-                        this.handleMantisChat(mantisChatNew);
-                        this.initConfig(res);
+                        this.handleMantisChat(mantisChatNew, () => {
+                            this.initConfig(res.data);
+                        });
                     }
                 },
-                fail: () => {
+                fail: (e) => {
+                    console.log(e);
                     this.initConfig(defaultConfig);
                 }
             });
@@ -561,9 +568,10 @@ Component({
                 let msg = res.msg;
                 mantisChatNew.chat.msg = msg || {};
             }
-            this.handleMantisChat(mantisChatNew);
-            this.initChat();
-            this.initInvite(res.data.invite);
+            this.handleMantisChat(mantisChatNew, () => {
+                this.initChat();
+                this.initInvite(res.invite);
+            });
         },
         initChat() {
             const {probeData, companyId} = this.data;
@@ -576,11 +584,10 @@ Component({
             }
             mantisChatNew.trackUrl = "https://" + track_host + "/u/1.gif";
             mantisChatNew.serviceGroupId = wx.getStorageSync('mantis_sgid' + companyId);
-
-            // pomelo监听
-            this.registerListener();
-
-            this.handleMantisChat(mantisChatNew);
+            this.handleMantisChat(mantisChatNew, () => {
+                // pomelo监听
+                this.registerListener();
+            });
         },
         initChatConfig(chatConfig) {
             MAX_REMINDER = chatConfig.maxRemCount || MAX_REMINDER;
@@ -628,8 +635,9 @@ Component({
             //添加客户自定义JS
             mantisChatNew.chat.customizableJS = chatConfig.customizableJS;
 
-            this.handleMantisChat(mantisChatNew);
-            this.mergeProbeSetting();
+            this.handleMantisChat(mantisChatNew, () => {
+                this.mergeProbeSetting();
+            });
         },
         mergeProbeSetting() {
             const {probeData} = this.data;
@@ -660,10 +668,6 @@ Component({
             let mbPromTxt = probeData.mbPromTxt;
             if (mbPromTxt) {
                 mbPromTxt = mbPromTxt.replace(/^<p>\s*<\/p>\n*$/, "").replace(/^<p><br><\/p>\n*$/, "");
-            }
-
-            if (mbPromTxt) {
-                mantisChatNew.chat.mbPromTxt = mbPromTxt;
             }
 
             // 消息中的咨询师头像
@@ -779,10 +783,10 @@ Component({
             });
         },
         registerListener: function () {
-            const {mantisChat, probeData} = this.data;
 
             pomelo.on('onChat', data => {
                 const _this = this;
+                const probeData = this.data.probeData;
                 let mantisChatNew = {...this.data.mantisChat};
                 const say_from = data.say_from;
                 const evaluationFlag = data.evaluationFlag;
@@ -796,7 +800,12 @@ Component({
                         this.clearRobotAutoMsgTmr();
                     }
                 }
-
+                if (data.type === 'IMG') {
+                    let msgImg = data.msg.match(/src=['"]([^'"]+)['"]/);
+                    if (msgImg && msgImg[1]) {
+                        data.imgSrc = msgImg[1];
+                    }
+                }
                 let chatComplete = data.complete || "N";
                 if (chatComplete === "Y") {
                     mantisChatNew.chat.isComplete = "Y";
@@ -842,7 +851,7 @@ Component({
                 }
 
                 // 如果是访客消息，更新访客的最后消息时间, 消息已经显示过，所以不用再添加
-                if (data.from === mantisChat.uid) {
+                if (data.from === mantisChatNew.uid) {
                     mantisChatNew.chat.vistorSent = true;
                     lastVisitorMsgTime = new Date().getTime();
                     lastVisitorReminderTime = new Date().getTime();
@@ -883,8 +892,9 @@ Component({
 
                     }
                     this.cutOff();
+                    data.msg = this.msgReplaceImgWidth(data.msg);
                     // 如果收到新消息且对话没有切断，自动弹出
-                    if (mantisChat.chat.connected) {
+                    if (mantisChatNew.chat.connected) {
                         let msg = data.msg;
                         let dataTime = data.time;
                         let timeStr = new Date(dataTime);
@@ -909,12 +919,14 @@ Component({
                         _this.stopAgentKeyIn();
                     }, 100);
                 }
-                data.msg = this.msgReplaceImgWidth(data.msg);
                 msgListNew.push(data);
                 this.setData({
                     msgList: msgListNew
                 }, () => {
                     _this.scrollDown();
+                    // this.setData({
+                    //     scrollBottomId: 'id_' + (data._id || data.msgId)
+                    // })
                 });
             })
             // 中断后的回调
@@ -968,6 +980,7 @@ Component({
 
             // 未关闭对话的历史消息
             pomelo.on('ON_HIS_MSG', data => {
+                const probeData = this.data.probeData;
                 let mantisChatNew = {...this.data.mantisChat};
                 let msgListNew = [];
                 allMessages = [];
@@ -1002,6 +1015,17 @@ Component({
                     }
                     if (say_from !== 'V' && say_from !== 'A') {
                         continue;
+                    }
+
+                    if (f.type === 'IMG') {
+                        let msgImg = f.msg.match(/src=['"]([^'"]+)['"]/);
+                        if (msgImg && msgImg[1]) {
+                            f.imgSrc = msgImg[1];
+                        }
+                    }
+
+                    if (f.choice_msg_click === 'N') {
+                        f.choiceMsg = JSON.parse(f.choice_msg);
                     }
 
                     // 如果是挽留提交的消息就不处理
@@ -1081,8 +1105,9 @@ Component({
                         this.cutOff();
                     }
                 }
-                this.handleMantisChat(mantisChatNew);
-                this.resendMsg();
+                this.handleMantisChat(mantisChatNew, () => {
+                    this.resendMsg();
+                });
 
             })
 
@@ -1109,6 +1134,17 @@ Component({
                     let say_from = f.say_from;
                     if (say_from !== 'V' && say_from !== 'A') {
                         continue;
+                    }
+
+                    if (f.type === 'IMG') {
+                        let msgImg = f.msg.match(/src=['"]([^'"]+)['"]/);
+                        if (msgImg && msgImg[1]) {
+                            f.imgSrc = msgImg[1];
+                        }
+                    }
+
+                    if (f.choice_msg_click === 'N') {
+                        f.choiceMsg = JSON.parse(f.choice_msg);
                     }
 
                     // 如果是挽留提交的消息就不处理
@@ -1150,7 +1186,6 @@ Component({
                 mantisChatNew.chat.connected = false;
                 isConnecting = false;
                 this.handleMantisChat(mantisChatNew);
-                console.warn("NO_AGENT_AVAILABLE");
                 this.showResvDiv("no_agent");
                 //清除用户输入提醒任务
                 clearInterval(reminderTmr);
@@ -1193,6 +1228,18 @@ Component({
                 reminderCount = 0;
                 // 通知对话发起
                 mantisChatNew.chat.hasChat = true;
+
+                // 挽留手机号发送
+                let mantisRetainTel = wx.getStorageSync('mantisRetainTel');
+                if (mantisRetainTel) {
+                    wx.setStorage({
+                        key: 'mantisRetainTel',
+                        data: ''
+                    });
+                    setTimeout(() => {
+                        this.sendMessage(mantisRetainTel, 'R_S');
+                    }, 1000)
+                }
 
                 // 如果咨询师配置头像，则最高优先级使用
                 try {
@@ -1256,13 +1303,13 @@ Component({
                 if (!!targetAgentId) {
                     mantisChatNew.assignedAgent = targetAgentId;
                 }
-                mantisChatNew.mode = "TRANSFER";
+                mantisChatNew.req_mode = "TRANSFER";
                 isConnecting = false;
                 mantisChatNew.chat.connected = false;
                 mantisChatNew.chat.vistorSent = false;
                 mantisChatNew.chat.agentSent = false;
                 pomelo.disconnect();
-                this.handleMantisChat(mantisChatNew,()=>{
+                this.handleMantisChat(mantisChatNew, () => {
                     this._requestChat();
                 });
             });
@@ -1280,11 +1327,13 @@ Component({
             })
         },
         getRequest: function () {
-            const {probeData, mantis} = this.data;
+            const {probeData, mantis, probeId, companyId, ipInfo} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.lp = mantisChatNew.chatPageUrl;
+            this.handleMantisChat(mantisChatNew);
+
             let req = mantisChatNew.request;
-            req.page_title = mantisChatNew.page_title;
+            req.page_title = '';
             req.req_mode = mantisChatNew.req_mode;
             req.req_ele = mantisChatNew.ele || "";
 
@@ -1301,14 +1350,16 @@ Component({
             req.trackId = mantis.trackId;
             req.assignedAgent = mantisChatNew.assignedAgent;
             req.browser = this.getDeviceInfo();
-
-            this.handleMantisChat(mantisChatNew);
             req.ipCheck = mantisChatNew.ipCheck;
             req.brand = mantisChatNew.brand;
             req.chat_page_url = '';
             req.ctag = mantisChatNew.ctag;
-            req.probeId = mantisChatNew.uiPath;
-            req.aifanfan = mantisChatNew.aifanfan;
+            req.probeId = companyId + '/' + probeId;
+            req.cookieRefer = JSON.stringify(mantis.trackInfo);
+            req.ip = ipInfo.ip;
+            req.country = ipInfo.country;
+            req.ip_city = ipInfo.ip_city;
+            req.ip_province = ipInfo.ip_province;
             return req;
         },
         handleUid: function (passedInUid) {
@@ -1396,8 +1447,8 @@ Component({
                         mantisChatNew.mantisTtimeDifference = data.serverTime - Date.now();
                     }
                     // restore the request mode
-                    if (mantisChatNew.mode === "TRANSFER") {
-                        mantisChatNew.mode = "VISTOR";
+                    if (mantisChatNew.req_mode === "TRANSFER") {
+                        mantisChatNew.req_mode = "VISTOR";
                     }
                     mantisChatNew.chatId = data.chatId;
                     mantisChatNew.channelId = data.channelId;
@@ -1405,12 +1456,13 @@ Component({
                     if (data.agentImg) {
                         mantisChatNew.agent_msg_icon = data.agentImg;
                     }
-                    _this.handleMantisChat(mantisChatNew);
-                    if (data.msgType === 'ON_WEL_MSG') {
-                        _this.welcomeMsg(data.msg, searchWordMessage);
-                    } else if (data.msgType === 'ON_WEL_MSG_ALL') {
-                        _this.welcomeMsgAll(data.msg, (data.historyMsgs || []));
-                    }
+                    _this.handleMantisChat(mantisChatNew, () => {
+                        if (data.msgType === 'ON_WEL_MSG') {
+                            _this.welcomeMsg(data.msg, searchWordMessage);
+                        } else if (data.msgType === 'ON_WEL_MSG_ALL') {
+                            _this.welcomeMsgAll(data.msg, (data.historyMsgs || []));
+                        }
+                    });
                 });
             });
         },
@@ -1922,7 +1974,10 @@ Component({
             let action = probeData.mbMsgAction || "tip";
             if (action === "tip") {
                 this.notifyNewMsg(msg);
-            } else {
+            }else if(action === 'notRemind'){
+                this.notifyNewMsg();
+            }
+            else {
                 this.showChat('AUTO');
             }
         },
@@ -1987,9 +2042,20 @@ Component({
         notifyNewMsg(msg) {
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.unReadMsgNumber += 1;
+            this.handleMantisChat(mantisChatNew);
+            if(msg){
+                this.setData({
+                    tipMsg: msg
+                })
+            }
             this.setData({
                 tipMsg: msg,
                 mantisChat: mantisChatNew
+            })
+        },
+        notifyNewMsgClose() {
+            this.setData({
+                tipMsg: null
             })
         },
         // 振动提醒
@@ -2006,9 +2072,9 @@ Component({
             const {inputValue, mantisChat} = this.data;
             if (inputValue && !sendBtnLoading) {
                 sendBtnLoading = true;
-                if(mantisChat.chat.connected){
+                if (mantisChat.chat.connected) {
                     this.sendMessage(inputValue);
-                }else{
+                } else {
                     this._requestChat({msgCon: inputValue})
                 }
             }
@@ -2029,7 +2095,7 @@ Component({
                 channelId: mantisChat.chat.channelId,
                 autoFlag: opt.autoFlag || 'N',
                 visitorId: mantisChat.uid,
-                companyId,
+                companyId: companyId * 1,
                 msgType: "A", // 系统发送
                 target: "",
                 type: "text"
@@ -2055,6 +2121,12 @@ Component({
                 //选择性消息
                 let choiceMsg = JSON.parse(msgContent);
                 msgId = choiceMsg.msgId;
+            }
+            if (/\b1[3-9]\d{9}\b/g.test(msgContent)) {
+                wx.setStorage({
+                    key: 'mantisSendTelFlag',
+                    data: 'Y'
+                });
             }
             pomelo.request(route, {
                 //消息接口
@@ -2158,7 +2230,7 @@ Component({
                     from: mantisChatNew.uid,
                     chatId: mantisChatNew.chatId,
                     agentId: mantisChatNew.chat.agent.agentId,
-                    companyId,
+                    companyId: companyId * 1,
                     channelId: mantisChatNew.chat.channelId,
                     target: ""
                 };
@@ -2174,7 +2246,7 @@ Component({
                             from: mantisChatNew.uid,
                             chatId: mantisChatNew.chatId,
                             agentId: mantisChatNew.chat.agent.agentId,
-                            companyId,
+                            companyId: companyId * 1,
                             channelId: mantisChatNew.chat.channelId,
                             target: ""
                         };
@@ -2192,30 +2264,37 @@ Component({
             });
             this.sendAiMsg('该访客点击了"电话咨询"按钮')
         },
-        handleEmojiBox(){
+        handleEmojiBox() {
             let isEmojiBox = this.data.isEmojiBox;
             this.setData({
                 isEmojiBox: !isEmojiBox
             })
         },
-        sendEmoji(e){
+        sendEmoji(e) {
             let src = e.target.dataset.src;
-            if(src){
-                this.sendMessage(`<img class="emojiImg" src="${src}" />`);
+            if (src) {
+                this.sendMessage(`<img class="emojiImg" style="width:30px;height:30px;" src="${src}" />`);
             }
             this.handleEmojiBox();
         },
         chooseImage: function () {
-            let tempFilePaths = [];
+            let tempFiles = [];
             wx.chooseImage({
                 count: 1,
                 sizeType: ['original', 'compressed'],
                 sourceType: ['album', 'camera'],
                 success: res => {
-                    if (res.tempFilePaths.length > 0) {
-                        tempFilePaths = tempFilePaths.concat(res.tempFilePaths);
-                        tempFilePaths.map(item => {
-                            this.uploadImg(item);
+                    if (res.tempFiles.length > 0) {
+                        tempFiles = tempFiles.concat(res.tempFiles);
+                        tempFiles.forEach(item => {
+                            if (item.size / 1024 / 1024 > 5) {
+                                wx.showToast({
+                                    title: '请选择大小在5M以内的文件',
+                                    icon: 'none'
+                                })
+                            } else {
+                                this.uploadImg(item.path);
+                            }
                         });
                     }
                 }
@@ -2232,10 +2311,14 @@ Component({
                 filePath: tempFilePath,
                 name: 'file',
                 success: res => {
-
                     let data = JSON.parse(res.data);
                     if (data.data) {
-                        this.sendMessage(`<img src="${data.data}" />`, null, 'IMG');
+                        this.sendMessage(`<img style="max-width: 100%" src="${data.data}" />`, null, 'IMG');
+                    } else {
+                        wx.showToast({
+                            title: '图片发送失败',
+                            icon: 'none'
+                        });
                     }
                 },
                 fail: res => {
@@ -2251,19 +2334,25 @@ Component({
             const {mantis} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.req_mode = "VISTOR";
-            this.handleMantisChat(mantisChatNew, () => this._requestChat());
-            let ut = {};
-            // save the click event
-            ut.ele_name = "右下角客服栏";
-            ut.e_id = mantis.e_id;
-            ut.type = "C";
-            this.sendClick(ut);
+            this.handleMantisChat(mantisChatNew, () => {
+                this._requestChat();
+                let ut = {};
+                // save the click event
+                ut.ele_name = "右下角客服栏";
+                ut.e_id = mantis.e_id;
+                ut.type = "C";
+                this.sendClick(ut);
+            });
             return false;
         },
         //发送点击信息
         sendClick(cInfo) {
             let {mantisChat, mantis} = this.data;
             if (!mantis.trackId) {
+                return;
+            }
+            if (!mantisChat.trackUrl) {
+                console.error("mantisChat.trackUrl不存在_", mantisChat.trackUrl);
                 return;
             }
             wx.request({
@@ -2303,7 +2392,7 @@ Component({
                         //消息接口
                         code,
                         chatId: mantisChat.chatId,
-                        companyId,
+                        companyId: companyId * 1,
                         channelId: mantisChat.chat.channelId
                     }, function (data) {
                         btnLoading = false;
@@ -2336,7 +2425,7 @@ Component({
             resvInfo.uid = mantisChat.uid;
             resvInfo.siteId = mantisChat.siteId;
             resvInfo.buId = probeData.buId;
-            resvInfo.companyId = companyId;
+            resvInfo.companyId = companyId * 1;
             resvInfo.ele = mantisChat.ele;
             resvInfo.pageUrl = mantisChat.chatPageUrl;
             resvInfo.lpUrl = mantisChat.chatPageUrl;
@@ -2387,7 +2476,7 @@ Component({
             let errFlag = null;
             keyArray.forEach(item => {
                 let val = formValues[item];
-                if(val && this.data.visitorForm[msgId] && this.data.visitorForm[msgId][item]){
+                if (val && this.data.visitorForm[msgId] && this.data.visitorForm[msgId][item]) {
                     val = this.data.visitorForm[msgId][item][val];
                 }
                 switch (item) {
@@ -2441,7 +2530,7 @@ Component({
                     //消息接口
                     msgId,
                     chatId: mantisChat.chatId,
-                    companyId,
+                    companyId: companyId * 1,
                     channelId: mantisChat.chat.channelId
                 }, function (data) {
 
@@ -2474,7 +2563,7 @@ Component({
                 if (triggerRemainTime) {
                     retainRemainTimer = setInterval(function () {
                         if (
-                            !_this.data.mantis.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') ||
+                            !mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') === 'Y' ||
                             _this.data.mantis.displayCountActual >= _this.data.mantis.displayCount
                         ) {
                             retainRemainTimer && clearInterval(retainRemainTimer);
@@ -2490,25 +2579,6 @@ Component({
                         }
                     }, triggerRemainTime * 1000)
                 }
-                /*if (mantisNew.triggerPageScroll) {
-                    // 滚动触发
-                    let scrollHeight = $(document).height() - $(window).height();
-                    let targetVal = (mantisNew.triggerPageScroll / 100 * scrollHeight).toFixed(0);
-                    if(scrollHeight > 200){
-                        $(document).scroll(function () {
-                            if((mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') === 'Y') || _this.data.isShowChat) return;
-                            let pageScroll = $(document).scrollTop();
-                            if (
-                                mantisNew.displayIntervalFlag &&
-                                mantisNew.displayCountActual < mantisNew.displayCount &&
-                                !mantisNew.isShowRetain &&
-                                pageScroll > targetVal
-                            ) {
-                                _this.mantisShowRetain();
-                            }
-                        })
-                    }
-                }*/
             }
         },
         mantisShowRetain() {
@@ -2532,7 +2602,7 @@ Component({
                     });
                 }, mantisNew.displayInterval * 1000)
             }
-            if (mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag')) {  //如果提交过要显示挽留并且已经提交过手机号
+            if (mantisNew.notDisplayExist && wx.getStorageSync('mantisSendTelFlag') === 'Y') {  //如果提交过挽留后不显示 并且已经提交过手机号
                 this.setData({
                     isShowSubmitComplete: false
                 })
@@ -2575,7 +2645,7 @@ Component({
         },
         //  获取验证码
         sendCode() {
-            if(sendCodeLoading) return;
+            if (sendCodeLoading) return;
             sendCodeLoading = true;
             const {retainPhone, probeData, companyId} = this.data;
             let url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/smsApi/sendVerificationCode.do";
@@ -2589,7 +2659,7 @@ Component({
             }
             this.codeTiming();
             let params = {
-                companyId,
+                companyId: companyId * 1,
                 phone: retainPhone
             }
             wx.request({
@@ -2636,7 +2706,7 @@ Component({
         retainSubmit(e) {
             const {mantisChat, probeData, companyId} = this.data;
             let values = e.detail.value;
-            if(retainBtnLoading) return;
+            if (retainBtnLoading) return;
             retainBtnLoading = true;
             let url = 'https://' + probeData.chatServer + "/" + companyId + "/api-war/chatapi/staySubmit.do";
             let phone = values.phone;
@@ -2645,14 +2715,14 @@ Component({
             if (!/^1[3-9]\d{9}$/.test(phone)) {
                 wx.showToast({
                     title: '请输入正确的手机号',
-                    icon: 'error'
+                    icon: 'none'
                 })
                 retainBtnLoading = false;
                 return;
             }
 
             let params = {
-                companyId,
+                companyId: companyId * 1,
                 phone,
                 stayId,
                 vistorId: mantisChat.uid
@@ -2670,7 +2740,7 @@ Component({
                     if (res.data && res.data.flag === 1) {
                         wx.setStorage({
                             key: 'mantisSendTelFlag',
-                            data: phone
+                            data: 'Y'
                         });
                         this.setData({
                             isShowSubmitComplete: true
@@ -2683,7 +2753,20 @@ Component({
                                 phone
                             }, () => {
                             });
+                            wx.setStorage({
+                                key: 'mantisRetainTel',
+                                data: phone
+                            });
                         }
+                    } else {
+                        let msg = '提交失败';
+                        if (res && res.data && res.data.message) {
+                            msg = res.data.message;
+                        }
+                        wx.showToast({
+                            title: msg,
+                            icon: 'none'
+                        })
                     }
                 },
                 fail: () => {
@@ -2697,14 +2780,14 @@ Component({
             });
         },
         savePickerRange(msgData) {
-            if(msgData.is_submit !== 'Y'){
+            if (msgData.is_submit !== 'Y') {
                 msgData.formData.fieldList.forEach(item => {
-                    if(item.fieldForm.fieldType === "OPTION"){
+                    if (item.fieldForm.fieldType === "OPTION") {
                         let msgId = msgData.msgId || msgData._id;
                         let pickerName = item.name;
                         let pickerList = item.fieldForm.option;
                         let visitorForm = {...this.data.visitorForm};
-                        if(!visitorForm[msgId]){
+                        if (!visitorForm[msgId]) {
                             visitorForm[msgId] = {};
                         }
                         visitorForm[msgId][pickerName] = pickerList;
@@ -2717,11 +2800,17 @@ Component({
         },
         bindPickerChange: function (e) {
             console.log('picker发送选择改变，携带值为', e.detail.value);
-            let {msgid,name} = e.target.dataset;
+            let {msgid, name} = e.target.dataset;
             let visitorForm = {...this.data.visitorForm};
             visitorForm[msgid][name + 'value'] = visitorForm[msgid][name][e.detail.value];
             this.setData({
                 visitorForm
+            })
+        },
+        imgLoadComplete(e) {
+            let msgId = e.target.dataset.id;
+            this.setData({
+                scrollBottomId: msgId
             })
         },
         // 表单留言
@@ -2852,7 +2941,7 @@ Component({
                 uid: mantisChat.uid,
                 company: probeData.companyId,
                 buId: probeData.buId,
-                page_title: mantisNew.title || '',
+                page_title: '',
                 url: mantisChat.chatPageUrl,
                 media: "mobile",
                 browser: this.getDeviceInfo(),
@@ -2875,6 +2964,10 @@ Component({
                     if (!res) {
                         mantisNew.e_id = null;
                         console.error("fail to save t, undefined!");
+                        wx.showToast({
+                            title:'fail to save t, undefined!',
+                            iocn:'none'
+                        });
                         _this.handleMantis(mantisNew);
                         return;
                     }
@@ -2882,10 +2975,15 @@ Component({
                     if (res.error) {
                         mantisNew.e_id = null;
                         console.error("fail to save t, error!");
+                        wx.showToast({
+                            title:'fail to save t, undefined!',
+                            iocn:'none'
+                        });
                         _this.handleMantis(mantisNew);
                         return;
                     }
                     let data = res.data;
+                    mantisNew.trackInfo = data;
                     mantisNew.trackRetry = 0;
 
                     //{trackId:r.insertedId, site_id:obj.siteId, ad:obj.referInfo.ad, plan:obj.plan, unit:obj.unit, subUnit:obj.subUnit, creative:obj.creative, url_mathced:true/false}
@@ -2907,12 +3005,12 @@ Component({
 
                         // 当发现存在机器人的活跃对话，如果配置了自动发起，则忽略等待自动发起，否则6秒自动拉起对话
                         if (!!data.hasChat) {
-                            let autoChatDelay = mantisNew.chat.autoChatDelay;
-                            if (typeof (mantisNew.chat.autoChatDelay) === "undefined") {
+                            let autoChatDelay = probeData.mbAutoChatDelay;
+                            if (typeof autoChatDelay === "undefined") {
                                 autoChatDelay = -1;
                             }
 
-                            if (isNaN(mantisNew.chat.autoChatDelay)) {
+                            if (isNaN(autoChatDelay)) {
                                 autoChatDelay = -1;
                             }
 
@@ -2929,7 +3027,8 @@ Component({
                         }
                     }
                 },
-                fail: () => {
+                fail: (e) => {
+                    console.log(e);
                     // 如果发送失败重试3次
                     if (mantisNew.trackRetry < 3) {    // 如果发送失败重试3次
                         setTimeout(function () {
@@ -2993,7 +3092,8 @@ Component({
                 url: "https://tk" + probeData.chatServer + "/u/1.gif",
                 data: liveInfo,
                 method: 'GET',
-                success: data => {
+                success: res => {
+                    let data = res.data;
                     if (!data) {
                         // console.debug("no response return");
                         return;
@@ -3035,21 +3135,22 @@ Component({
 
                     }
                 },
-                fail: () => {
+                fail: (e) => {
+                    console.log(e);
                     console.error("Post TTL information error-sendClick");
                 }
             });
         },
-        msgReplaceQrCode(msg){
-            if(/mantisWechatQrCode/.test(msg)){
+        msgReplaceQrCode(msg) {
+            if (/mantisWechatQrCode/.test(msg)) {
                 msg = msg.replace(/<img\s?class\s?=\s?'?"?mantisWechatQrCode'?"?[^>]*>/g, '')
             }
             return msg;
         },
-        msgReplaceImgWidth(msg){
-            if(!/\/chat\/emoji/.test(msg)){
-                msg = msg.replace(/<img/g, '<img style=\\"max-width:100%;\\"');
-            }else{
+        msgReplaceImgWidth(msg) {
+            if (!/\/chat\/emoji/.test(msg)) {
+                msg = msg.replace(/<img/g, "<img style='max-width:100%;'");
+            } else {
                 msg = msg.replace(/<img/g, '<img class="emojiImg" style="width:30px;height:30px"');
             }
             return msg;
@@ -3227,6 +3328,28 @@ Component({
         },
         handleRandom(n, m) {
             return Math.round(Math.random() * (m - n) + n);
+        },
+        getIp() {
+            const {mantisChat} = this.data;
+            wx.request({
+                url: 'https://ip-service-pb.bjmantis.net/outer/calcIp',
+                method: 'POST',
+                data: {
+                    uid: mantisChat.uid
+                },
+                success: res => {
+                    let ipInfo = {
+                        ip: res.data.ip,
+                        country: res.data.country,
+                        ip_city: res.data.city,
+                        ip_province: res.data.region,
+                    }
+                    this.setData({ipInfo});
+                },
+                fail(res) {
+                    console.log(res);
+                }
+            })
         }
     },
     export() {

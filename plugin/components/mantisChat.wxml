@@ -23,14 +23,15 @@
         >
             <view class="hisMsgList" wx:if="{{!!hisMsgList.length}}">
                 <block wx:for="{{hisMsgList}}">
-                    <view class="msgItem msgItemL" wx:if="{{item.say_from === 'A' && item.msgType !== 'F'}}">
+                    <view class="msgItem msgItemL" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'A' && item.msgType !== 'F'}}">
                         <view class="msgItemTime">{{item.timeStr}}</view>
                         <view class="msgItemDown">
                             <image class="agentHead" mode="aspectFit"
-                                   src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}"></image>
+                                   src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}" />
                             <view class="msgCon">
-                                <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg}}"/>
-                                <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg}}"/>
+                                <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
+                                <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
                             </view>
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
@@ -54,11 +55,12 @@
                             </block>
                         </view>
                     </view>
-                    <view class="msgItem msgItemR" wx:if="{{item.say_from === 'V'}}">
+                    <view class="msgItem msgItemR" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'V'}}">
                         <view class="msgItemTime">{{item.timeStr}}</view>
                         <view class="msgItemDown">
                             <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
-                                <rich-text nodes="{{item.msg}}" />
+                                <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}"/>
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
                                    src="../utils/img/studentDefaultHead.png"></image>
@@ -98,6 +100,7 @@
             <view class="moreMsg" wx:if="{{!!hisMsgList.length}}">
                 <text>以上是历史消息</text>
             </view>
+            <!-- 开场语 -->
             <view class="mbChatPromDiv" wx:if="{{!!probeData.mbPromTxt}}">
                 <rich-text class='rich_span' nodes='{{probeData.mbPromTxt}}'></rich-text>
             </view>
@@ -108,8 +111,9 @@
                         <image class="agentHead" mode="aspectFit"
                                src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}"></image>
                         <view class="msgCon">
-                            <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg}}"/>
-                            <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg}}"/>
+                            <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
+                            <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
+                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
                         </view>
                     </view>
 <!--                    复制微信号、电话咨询按钮-->
@@ -137,7 +141,8 @@
                     <view class="msgItemTime">{{item.timeStr}}</view>
                     <view class="msgItemDown">
                         <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
-                            <rich-text nodes="{{item.msg}}" />
+                            <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}" />
+                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
                         </view>
                         <image class="agentHead" mode="aspectFit"
                                src="../utils/img/studentDefaultHead.png"></image>
@@ -252,8 +257,8 @@
         bindtap="clickFloating"
 >
 <!--    <text class="iconfont icon-fankuixinxi" wx:if="{{!mantisChatNew.unReadMsgNumber}}"></text>-->
-    <image src="../utils/img/msgIcon.png" mode="aspectFit" class="minimizeIcon" />
-    <text class="minimizeNum" wx:if="{{mantisChatNew.unReadMsgNumber}}">{{mantisChatNew.unReadMsgNumber}}</text>
+    <image src="../utils/img/msgIcon.png" mode="aspectFit" class="minimizeIcon" wx:if="{{!mantisChat.unReadMsgNumber}}" />
+    <text class="minimizeNum" wx:if="{{mantisChat.unReadMsgNumber}}">{{mantisChat.unReadMsgNumber}}</text>
 </view>
 
 <!--提醒消息内容浮窗-->
@@ -262,12 +267,12 @@
         style="display:{{tipMsg?'block':'none'}};top:{{probeData.mbMsgLocation === 'HEAD' ? 0 : 'auto'}};bottom:{{probeData.mbMsgLocation === 'HEAD' ? 'auto' : probeData.mbMsgLocation === 'BOTTOM' ? 0 : '360rpx'}}"
 >
     <view class="minimizeMsgTop">
-        <image class="minimizeGB" src="https://probe.bjmantis.net/chat/img/close.png" />
+        <image class="minimizeGB" src="https://probe.bjmantis.net/chat/img/close.png" bindtap="notifyNewMsgClose" />
         <image class="minimizeHeader" src="https://probe.bjmantis.net/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg" />
         <text class="mantisNickname">{{mantisChat.chat.agentName}}</text>
     </view>
     <view class="minimizeMsgList" bindtap="clickFloating">
-        <text>{{tipMsg}}</text>
+        <rich-text nodes="{{tipMsg}}"/>
     </view>
 </view>
 

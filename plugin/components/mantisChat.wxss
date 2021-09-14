@@ -176,6 +176,7 @@
     overflow: hidden;
     margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
 }
 
 .chat_history .msgItem .choice-btn-content .choice-btn-item {
@@ -215,11 +216,14 @@
     margin-right: 50rpx;
 }
 
-
 .chat_history .msgItemR .msgItemDown .msgCon {
     border-radius: 4px 0 4px 4px;
     margin-left: 50rpx;
     color:#fff;
+}
+
+.chat_history .msgItemDown .msgCon .msgImg{
+   max-width: 100%;
 }
 
 .msgItem .msg_btnBox {
@@ -564,7 +568,7 @@
 
 .mantisInvitation {
     position: fixed;
-    z-index: 999999999;
+    z-index: 99999999;
     top: 50%;
     transform: translateY(-50%);
 }
