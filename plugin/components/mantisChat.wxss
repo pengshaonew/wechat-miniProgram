@@ -145,7 +145,7 @@
     font-size: 24rpx;
     color: #999;
     text-align: center;
-    margin: 16rpx 0;
+    padding: 16rpx 0;
 }
 
 .chat_history .mbChatPromDiv {

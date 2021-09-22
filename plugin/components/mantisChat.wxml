@@ -31,7 +31,7 @@
                             <view class="msgCon">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
                                 <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
@@ -60,7 +60,7 @@
                         <view class="msgItemDown">
                             <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}"/>
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
                                    src="../utils/img/studentDefaultHead.png"></image>
@@ -113,7 +113,7 @@
                         <view class="msgCon">
                             <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
                             <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
-                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
+                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                         </view>
                     </view>
 <!--                    复制微信号、电话咨询按钮-->
@@ -142,7 +142,7 @@
                     <view class="msgItemDown">
                         <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                             <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}" />
-                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" />
+                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                         </view>
                         <image class="agentHead" mode="aspectFit"
                                src="../utils/img/studentDefaultHead.png"></image>
@@ -268,7 +268,7 @@
 >
     <view class="minimizeMsgTop">
         <image class="minimizeGB" src="https://probe.bjmantis.net/chat/img/close.png" bindtap="notifyNewMsgClose" />
-        <image class="minimizeHeader" src="https://probe.bjmantis.net/7011/upload/tantou/08a08756f7794c1da072e84fa6fc3b6f.jpg" />
+        <image class="minimizeHeader" src="{{mantisChat.chat.agent_msg_icon}}" />
         <text class="mantisNickname">{{mantisChat.chat.agentName}}</text>
     </view>
     <view class="minimizeMsgList" bindtap="clickFloating">

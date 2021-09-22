@@ -114,6 +114,10 @@ let ttlInterval = null;
 // socket是否在连接中
 let isConnecting = false;
 
+let chatIdOld = null;
+
+let propPhoneSendFlag = false;
+
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
 const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/ig;
 
@@ -280,6 +284,7 @@ Component({
             const mantisChat = this.data.mantisChat;
             if (phone && mantisChat.chat.connected) {
                 this.sendMessage(phone);
+                propPhoneSendFlag = true;
             }
         }
     },
@@ -473,8 +478,7 @@ Component({
             this.handleMantisChat(mantisChatNew);
         },
         _requestChat(params) {
-            const {mantisChat} = this.data;
-            let mantisChatNew = {...mantisChat};
+            let mantisChatNew = {...this.data.mantisChat};
             if (isConnecting) {
                 return;
             }
@@ -482,7 +486,7 @@ Component({
                 parentParams: params || {}
             })
             this.handleMantisChat(mantisChatNew, () => {
-                if (!mantisChat.chat.connected) { //  如果没有发起会话再发请求
+                if (!mantisChatNew.chat.connected) { //  如果没有发起会话再发请求
                     isConnecting = true;
                     this.queryEntry();
                 } else {
@@ -791,6 +795,9 @@ Component({
                 const say_from = data.say_from;
                 const evaluationFlag = data.evaluationFlag;
                 let msgListNew = [...this.data.msgList];
+                if(msgListNew.some(item => (item._id || item.msgId) === data.msgId && item.msg === data.msg)){
+                    return;
+                }
 
                 // 如果访客说话，球到咨询师手里
                 if (say_from === 'V') {
@@ -919,7 +926,9 @@ Component({
                         _this.stopAgentKeyIn();
                     }, 100);
                 }
-                msgListNew.push(data);
+                if (!msgListNew.some(item => (item._id || item.msgId) === data.msgId && item.msg === data.msg)) {
+                    msgListNew.push(data);
+                }
                 this.setData({
                     msgList: msgListNew
                 }, () => {
@@ -980,6 +989,7 @@ Component({
 
             // 未关闭对话的历史消息
             pomelo.on('ON_HIS_MSG', data => {
+                console.log('ON_HIS_MSG',data.msg);
                 const probeData = this.data.probeData;
                 let mantisChatNew = {...this.data.mantisChat};
                 let msgListNew = [];
@@ -1113,9 +1123,11 @@ Component({
 
             // 收到历史消息
             pomelo.on('ON_HIS_CHAT_MSG', data => {
+                console.log('ON_HIS_CHAT_MSG');
                 const {probeData} = this.data;
                 let hisMsgListNew = [];
                 if (probeData.notShowHistoryMessage) {
+                    this.clearHisChatMsg();
                     return;
                 }
                 let msgs = data.msg;
@@ -1210,11 +1222,21 @@ Component({
             pomelo.on('ON_CHANNEL_OK', data => {
                 console.log('ON_CHANNEL_OK', Date.now() - reqStartTime);
                 const _this = this;
-                const {parentParams} = this.data;
+                const {parentParams, probeData, phone} = this.data;
+                if (probeData.notShowHistoryMessage) {
+                    this.clearHisChatMsg();
+                }
                 let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = true;
                 isConnecting = false;
-                mantisChatNew.chat.agent = data.msg.agent;
+                mantisChatNew.chat.agent = data.msg.agent || {};
+                if(chatIdOld !== data.msg.chatId){
+                    chatIdOld = data.chatId;
+                    mantisChatNew.chat.vistorSent = false;
+                    mantisChatNew.chat.agentSent = false;
+                    mantisChatNew.chat.visitorMsgCount = 0;
+                    mantisChatNew.chat.agentMsgCount = 0;
+                }
                 mantisChatNew.chatId = data.msg.chatId;
                 mantisChatNew.chat.channelId = data.msg.channelId;
                 mantisChatNew.sgId = data.msg.sgId;
@@ -1259,11 +1281,6 @@ Component({
 
                 }
 
-                // 如果msgCon存在  直接发送
-                if (parentParams && parentParams.msgCon) {
-                    this.sendMessage(parentParams.msgCon);
-                }
-
                 // 提示咨询师消息
                 setTimeout(function () {
                     _this.stopAgentKeyIn();
@@ -1274,6 +1291,14 @@ Component({
                 this.handleMantisChat(mantisChatNew, () => {
                     // show chat window
                     this.showChat();
+                    // 如果msgCon存在  直接发送
+                    if (parentParams && parentParams.msgCon) {
+                        this.sendMessage(parentParams.msgCon);
+                    }
+                    if(!propPhoneSendFlag && phone){
+                        this.sendMessage(phone);
+                        propPhoneSendFlag = true;
+                    }
                 });
             })
 
@@ -1282,7 +1307,6 @@ Component({
                 console.log('收到对话转接请求');
                 const {companyId} = this.data;
                 let mantisChatNew = {...this.data.mantisChat};
-                console.info("chat transfer event:" + JSON.stringify(data));
                 let newServiceGroupId = data.newServiceGroupId;
                 let targetAgentId = data.agentId;
                 if (!newServiceGroupId && !targetAgentId) {
@@ -1427,7 +1451,7 @@ Component({
                     ocpcUrl: mantisChat.ocpcUrl,
                     reqInfo: _this.getRequest(),
                     lpRequestDuration: enterDuration,
-                    welcome: '',
+                    welcome: mantisChat.chat.welcome,
                     xst: '',
                     pageparam: params.pageParam,
                     thirdAccount: params.account,
@@ -1450,6 +1474,13 @@ Component({
                     if (mantisChatNew.req_mode === "TRANSFER") {
                         mantisChatNew.req_mode = "VISTOR";
                     }
+                    if(chatIdOld !== data.chatId){
+                        chatIdOld = data.chatId;
+                        mantisChatNew.chat.vistorSent = false;
+                        mantisChatNew.chat.agentSent = false;
+                        mantisChatNew.chat.visitorMsgCount = 0;
+                        mantisChatNew.chat.agentMsgCount = 0;
+                    }
                     mantisChatNew.chatId = data.chatId;
                     mantisChatNew.channelId = data.channelId;
                     mantisChatNew.sgId = data.sgId;
@@ -1468,7 +1499,6 @@ Component({
         },
         welcomeMsg(msgList) {
             let mantisChatNew = this.data.mantisChat;
-            let msgListNew = [...this.data.msgList];
             this.clearHisMsg();
             welcomeMsgs = [];
             let isSent = false;
@@ -1495,8 +1525,7 @@ Component({
                                     let timeStr = new Date(dataTime);
                                     f.timeStr = this.dateFormat(timeStr, "yyyy-MM-dd hh:mm:ss");
                                     f.say_from = 'A';
-                                    msgListNew.push(f);
-                                    this.setData({msgList: msgListNew}, () => {
+                                    this.setData({msgList: [f]}, () => {
                                         this.scrollDown();
                                     });
                                     isSent = true;
@@ -1601,7 +1630,6 @@ Component({
         },
         startWelcomeMsgTmr() {
             const _this = this;
-            const mantisChat = this.data.mantisChat;
             if (!welcomeMsgs || welcomeMsgs.length === 0) {
                 return;
             }
@@ -1613,6 +1641,7 @@ Component({
                 time = time + gap * 1000;
                 (function (msg, time1, e) {
                     setTimeout(function () {
+                        const mantisChat = _this.data.mantisChat;
                         if (mantisChat.chat.vistorSent || mantisChat.chat.agentSent) {
                             return;
                         }
@@ -1642,19 +1671,20 @@ Component({
             }
         },
         getWechatRule(msgData) {
-            const {probeData} = this.data;
+            const {probeData, mantisChat} = this.data;
             let route = "chat.chatHandler.findWelcomeWeChatAssignEngine";
             pomelo.request(route, {
                 companyId: probeData.companyId,
                 chatId: mantisChat.chatId,
                 wechatAssignId: msgData.wechatAssignId,
                 uid: mantisChat.uid
-            }, function (data) {
+            }, data=>{
                 mantisChat.chat.wechatRule = data.wechatInfo;
                 this.replaceWechatCode(msgData)
             })
         },
         replaceWechatCode(msgData) {
+            const { mantisChat } = this.data;
             let wechatRule = mantisChat.chat.wechatRule;
             let msg = msgData.msg;
             if (msg.indexOf('#WECHAT_WORD#') !== -1) {
@@ -1708,7 +1738,7 @@ Component({
                     visitorId: mantisChat.uid,
                     msgId: data.msgId
                 }, function (data) {
-                    // console.log('消息回执返回', data);
+
                 });
             }
         },
@@ -1722,8 +1752,13 @@ Component({
         // 清理历史聊天信息
         clearHisMsg() {
             this.setData({
-                hisMsgList: [],
                 msgList: []
+            })
+        },
+        // 清理历史聊天信息
+        clearHisChatMsg() {
+            this.setData({
+                hisMsgList: []
             })
         },
         //  记录进入留言表单
@@ -1826,27 +1861,27 @@ Component({
         // 启动机器人自动追问定时器
         setRobotAutoMsgTimer() {
             const _this = this;
-            let mantisChatNew = {...this.data.mantisChat};
             if (!!robotAutoMsgTmr) {
                 clearInterval(robotAutoMsgTmr);
                 robotAutoMsgTmr = null;
             }
 
             robotAutoMsgTmr = setInterval(function () {
+                let mantisChat = {..._this.data.mantisChat};
 
-                if (mantisChatNew.chat.isComplete === "Y") {
+                if (mantisChat.chat.isComplete === "Y") {
                     return;
                 }
 
-                if (!mantisChatNew.chat.ball) {
+                if (!mantisChat.chat.ball) {
                     return;
                 }
 
-                if (!mantisChatNew.chat.ball.who) {
+                if (!mantisChat.chat.ball.who) {
                     return;
                 }
 
-                if (!mantisChatNew.chat.vistorSent) {
+                if (!mantisChat.chat.vistorSent) {
                     return;
                 }
 
@@ -1855,17 +1890,17 @@ Component({
                     return;
                 }
 
-                if (mantisChatNew.chat.ball.who === 'A') {
+                if (mantisChat.chat.ball.who === 'A') {
                     return;
                 }
 
-                let time = mantisChatNew.chat.ball.lastTime;
+                let time = mantisChat.chat.ball.lastTime;
                 if (!time || time === 0) {
                     return;
                 }
                 let gap = new Date().getTime() - time;
                 if (gap > 10000) {
-                    let inputGap = new Date().getTime() - (mantisChatNew.chat.lastInputtingTime || 0);
+                    let inputGap = new Date().getTime() - (mantisChat.chat.lastInputtingTime || 0);
                     // 如果有未发出的内容，且最后输入时间不到60秒
                     if (_this.data.inputValue && inputGap < 60 * 1000) {
                         return;
@@ -2021,7 +2056,7 @@ Component({
             }
         },
         msgResend(msg, msgType) {
-            const {probeData} = this.data;
+            const {probeData, mantisChat} = this.data;
             pomelo.request("chat.chatHandler.customerSend", {
                 //消息接口
                 content: msg,
@@ -2168,8 +2203,15 @@ Component({
                 }
                 return item;
             });
+            let hisMsgListNew = this.data.hisMsgList.map(item => {
+                if ((item._id || item.msgId) === msgid) {
+                    item.choiceMsg.content = null;
+                }
+                return item;
+            });
             this.setData({
-                msgList: msgListNew
+                msgList: msgListNew,
+                hisMsgList: hisMsgListNew
             }, () => {
                 this.scrollDown();
             });
@@ -2331,6 +2373,9 @@ Component({
         },
         // 点击悬浮球、提示消息列表、邀请框
         clickFloating() {
+            if (isConnecting) {
+                return;
+            }
             const {mantis} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
             mantisChatNew.req_mode = "VISTOR";
@@ -2352,7 +2397,7 @@ Component({
                 return;
             }
             if (!mantisChat.trackUrl) {
-                console.error("mantisChat.trackUrl不存在_", mantisChat.trackUrl);
+                console.log("mantisChat.trackUrl invalid");
                 return;
             }
             wx.request({
@@ -2615,9 +2660,9 @@ Component({
         // 自动发起
         autoChat(autoChatDelay) {
             const _this = this;
-            let mantisChatNew = {...this.data.mantisChat};
             switch (autoChatDelay) {
                 case 0:
+                    let mantisChatNew = {..._this.data.mantisChat};
                     mantisChatNew.req_mode = "AUTO";
                     enterDuration = 0;
                     _this.handleMantisChat(mantisChatNew, () => {
@@ -2626,7 +2671,8 @@ Component({
 
                     break;
                 default:
-                    setTimeout(function () {
+                    setTimeout(() => {
+                        let mantisChatNew = {..._this.data.mantisChat};
                         mantisChatNew.req_mode = "AUTO";
                         enterDuration = autoChatDelay;
                         _this.handleMantisChat(mantisChatNew, () => {
@@ -3016,7 +3062,7 @@ Component({
 
                             if (autoChatDelay === -1) {
                                 setTimeout(function () {
-                                    if (mantisNew.chat.hasChat) {
+                                    if (mantisChat.chat.hasChat) {
                                         return;
                                     }
                                     mantisNew.req_mode = "AUTO";
