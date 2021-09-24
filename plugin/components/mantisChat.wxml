@@ -15,9 +15,9 @@
         <scroll-view
                 scroll-y="true"
                 bindscroll="scroll"
-                scroll-top="{{scrollTop}}"
                 scroll-with-animation="{{true}}"
                 scroll-anchoring="{{true}}"
+                show-scrollbar="{{false}}"
                 class="chat_history"
                 scroll-into-view="{{scrollBottomId}}"
         >
@@ -104,90 +104,93 @@
             <view class="mbChatPromDiv" wx:if="{{!!probeData.mbPromTxt}}">
                 <rich-text class='rich_span' nodes='{{probeData.mbPromTxt}}'></rich-text>
             </view>
-            <block wx:for="{{msgList}}" wx:key="{{item._id || item.msgId}}">
-                <view class="msgItem msgItemL" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'A' && item.msgType !== 'F'}}">
-                    <view class="msgItemTime">{{item.timeStr}}</view>
-                    <view class="msgItemDown">
-                        <image class="agentHead" mode="aspectFit"
-                               src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}"></image>
-                        <view class="msgCon">
-                            <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
-                            <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
-                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
-                        </view>
-                    </view>
-<!--                    复制微信号、电话咨询按钮-->
-                    <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
-                        <text wx:if="{{!probeData.callPhoneNumberFlag && item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
-                        <text wx:if="{{!probeData.copyWechatNumberFlag && item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
-                    </view>
-                    <!--选择性消息-->
-                    <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
-                        <block wx:for="{{item.choiceMsg.content}}" wx:for-item="choiceMsgItem">
-                            <view
-                                    class="choice-btn-item"
-                                    style="background:{{choiceMsgItem.bgColor || probeData.mbTitleColor || '#06CB94'}}"
-                                    data-btnId="{{choiceMsgItem.btnId}}"
-                                    data-label="{{choiceMsgItem.label}}"
-                                    data-msgid="{{item._id || item.msgId}}"
-                                    bindtap="sendChoiceMsg"
-                            >
-                                {{choiceMsgItem.label}}
+            <view>
+                <block wx:for="{{msgList}}" wx:key="{{item._id || item.msgId}}">
+                    <view class="msgItem msgItemL" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'A' && item.msgType !== 'F'}}">
+                        <view class="msgItemTime">{{item.timeStr}}</view>
+                        <view class="msgItemDown">
+                            <image class="agentHead" mode="aspectFit"
+                                   src="{{mantisChat.chat.agent_msg_icon || '../utils/img/agentDefaultHead.png'}}"></image>
+                            <view class="msgCon">
+                                <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
+                                <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
-                        </block>
-                    </view>
-                </view>
-                <view class="msgItem msgItemR" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'V'}}">
-                    <view class="msgItemTime">{{item.timeStr}}</view>
-                    <view class="msgItemDown">
-                        <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
-                            <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}" />
-                            <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                         </view>
-                        <image class="agentHead" mode="aspectFit"
-                               src="../utils/img/studentDefaultHead.png"></image>
-                    </view>
-                </view>
-                <!--评价结果-->
-                <view class="evaluate_result" wx:if="{{item.evaluationFlag === 'EVALUATE_RESULT'}}" id="{{item._id || item.msgId}}">
-                    <text>{{item.msg}}</text>
-                </view>
-                <!--表单消息-->
-                <view class="formMsg" wx:if="{{item.formData && item.is_submit !== 'Y'}}" id="{{item._id || item.msgId}}">
-                    <form catchsubmit="formMsgSubmit" data-msgid="{{item._id||item.msgId}}">
-                        <view class="formMsgTitle">
-                            {{item.formData.formTitle}}
+                        <!--                    复制微信号、电话咨询按钮-->
+                        <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
+                            <text wx:if="{{!probeData.callPhoneNumberFlag && item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
+                            <text wx:if="{{!probeData.copyWechatNumberFlag && item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
                         </view>
-                        <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
-                            <input
-                                    placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}"
-                                    cursor-spacing="100"
-                            />
-                            <picker
-                                    bindchange="bindPickerChange"
-                                    range="{{formItem.fieldForm.option}}"
-                                    name="{{formItem.name}}"
-                                    wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}"
-                                    data-name="{{formItem.name}}"
-                                    data-msgid="{{item._id || item.msgId}}"
-                            >
-                                <view class="msgForm">
-                                    <text wx:if="{{!visitorForm[item._id || item.msgId][formItem.name + 'value']}}" class="pickerPlaceholder">{{formItem.name}}</text>
-                                    <text wx:if="{{!!visitorForm[item._id || item.msgId][formItem.name + 'value']}}">{{visitorForm[item._id || item.msgId][formItem.name + 'value']}}</text>
+                        <!--选择性消息-->
+                        <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
+                            <block wx:for="{{item.choiceMsg.content}}" wx:for-item="choiceMsgItem">
+                                <view
+                                        class="choice-btn-item"
+                                        style="background:{{choiceMsgItem.bgColor || probeData.mbTitleColor || '#06CB94'}}"
+                                        data-btnId="{{choiceMsgItem.btnId}}"
+                                        data-label="{{choiceMsgItem.label}}"
+                                        data-msgid="{{item._id || item.msgId}}"
+                                        bindtap="sendChoiceMsg"
+                                >
+                                    {{choiceMsgItem.label}}
                                 </view>
-                            </picker>
+                            </block>
                         </view>
-                        <button
-                                type="primary"
-                                formType="submit"
-                                style="background:{{probeData.mbSndBtnColor}}"
-                                class="msgFormBtn"
-                        >
-                            {{item.formData.formSubmitBtnText}}
-                        </button>
-                    </form>
-                </view>
-            </block>
+                    </view>
+                    <view class="msgItem msgItemR" id="id_{{item._id || item.msgId}}" wx:if="{{item.say_from === 'V'}}">
+                        <view class="msgItemTime">{{item.timeStr}}</view>
+                        <view class="msgItemDown">
+                            <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
+                                <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
+                            </view>
+                            <image class="agentHead" mode="aspectFit"
+                                   src="../utils/img/studentDefaultHead.png"></image>
+                        </view>
+                    </view>
+                    <!--评价结果-->
+                    <view class="evaluate_result" wx:if="{{item.evaluationFlag === 'EVALUATE_RESULT'}}" id="{{item._id || item.msgId}}">
+                        <text>{{item.msg}}</text>
+                    </view>
+                    <!--表单消息-->
+                    <view class="formMsg" wx:if="{{item.formData && item.is_submit !== 'Y'}}" id="{{item._id || item.msgId}}">
+                        <form catchsubmit="formMsgSubmit" data-msgid="{{item._id||item.msgId}}">
+                            <view class="formMsgTitle">
+                                {{item.formData.formTitle}}
+                            </view>
+                            <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
+                                <input
+                                        placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}"
+                                        cursor-spacing="100"
+                                />
+                                <picker
+                                        bindchange="bindPickerChange"
+                                        range="{{formItem.fieldForm.option}}"
+                                        name="{{formItem.name}}"
+                                        wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}"
+                                        data-name="{{formItem.name}}"
+                                        data-msgid="{{item._id || item.msgId}}"
+                                >
+                                    <view class="msgForm">
+                                        <text wx:if="{{!visitorForm[item._id || item.msgId][formItem.name + 'value']}}" class="pickerPlaceholder">{{formItem.name}}</text>
+                                        <text wx:if="{{!!visitorForm[item._id || item.msgId][formItem.name + 'value']}}">{{visitorForm[item._id || item.msgId][formItem.name + 'value']}}</text>
+                                    </view>
+                                </picker>
+                            </view>
+                            <button
+                                    type="primary"
+                                    formType="submit"
+                                    style="background:{{probeData.mbSndBtnColor}}"
+                                    class="msgFormBtn"
+                            >
+                                {{item.formData.formSubmitBtnText}}
+                            </button>
+                        </form>
+                    </view>
+                </block>
+            </view>
+            <view id="scrollDown" class="scrollDown"/>
         </scroll-view>
         <!--评价窗口-->
         <view class="evaluationModal" wx:if="{{isEvaluationModal}}">

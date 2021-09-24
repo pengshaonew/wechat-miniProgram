@@ -115,7 +115,7 @@ let ttlInterval = null;
 let isConnecting = false;
 
 let chatIdOld = null;
-
+// props手机号发送标记
 let propPhoneSendFlag = false;
 
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
@@ -239,7 +239,7 @@ Component({
             request: {},
             paras: {}
         },
-        scrollBottomId: '',
+        scrollBottomId: 'scrollDown',
         visitorForm: {},
         emojiList: [
             'https://probe.bjmantis.net/chat/emoji/2020001.png',
@@ -307,6 +307,9 @@ Component({
             });
             this.initParams();
             this.loadProbeData();
+        },
+        detached(){
+
         }
     },
 
@@ -503,7 +506,6 @@ Component({
                     data: {},
                     method: 'GET',
                     success: res => {
-                        console.log('探头请求时长：', Date.now() - startTime);
                         if (res && res.data) {
                             if (res.data.mbPromTxt) {
                                 res.data.mbPromTxt = this.msgReplaceImgWidth(res.data.mbPromTxt)
@@ -738,7 +740,6 @@ Component({
             const {probeData, mantisChat, params} = this.data;
             let port = ports[this.handleRandom(0, 1)];
             reqStartTime = Date.now();
-            console.log('queryCustomerEntry', reqStartTime);
             pomelo.init({
                 host: probeData.chatServer,
                 port
@@ -787,7 +788,7 @@ Component({
             });
         },
         registerListener: function () {
-
+            pomelo.removeAllListeners();
             pomelo.on('onChat', data => {
                 const _this = this;
                 const probeData = this.data.probeData;
@@ -839,7 +840,7 @@ Component({
                         this.setData({
                             msgList: msgListNew
                         }, () => {
-                            _this.scrollDown();
+                            this.scrollDown();
                         });
                     }
                 }
@@ -933,9 +934,6 @@ Component({
                     msgList: msgListNew
                 }, () => {
                     _this.scrollDown();
-                    // this.setData({
-                    //     scrollBottomId: 'id_' + (data._id || data.msgId)
-                    // })
                 });
             })
             // 中断后的回调
@@ -989,7 +987,6 @@ Component({
 
             // 未关闭对话的历史消息
             pomelo.on('ON_HIS_MSG', data => {
-                console.log('ON_HIS_MSG',data.msg);
                 const probeData = this.data.probeData;
                 let mantisChatNew = {...this.data.mantisChat};
                 let msgListNew = [];
@@ -1096,7 +1093,7 @@ Component({
                 this.setData({
                     msgList: msgListNew
                 }, () => {
-                    this.scrollDown();
+                    this.scrollDown(500);
                 })
                 if (mms.length) {
                     let hisLastMsg = mms[mms.length - 1];
@@ -1123,7 +1120,6 @@ Component({
 
             // 收到历史消息
             pomelo.on('ON_HIS_CHAT_MSG', data => {
-                console.log('ON_HIS_CHAT_MSG');
                 const {probeData} = this.data;
                 let hisMsgListNew = [];
                 if (probeData.notShowHistoryMessage) {
@@ -1141,6 +1137,8 @@ Component({
                         hisMsgListNew.push(f);
                         this.setData({
                             hisMsgList: hisMsgListNew
+                        }, () => {
+                            this.scrollDown(500);
                         })
                     }
                     let say_from = f.say_from;
@@ -1220,13 +1218,12 @@ Component({
 
             // 对话发起成功
             pomelo.on('ON_CHANNEL_OK', data => {
-                console.log('ON_CHANNEL_OK', Date.now() - reqStartTime);
+                let mantisChatNew = {...this.data.mantisChat};
                 const _this = this;
                 const {parentParams, probeData, phone} = this.data;
                 if (probeData.notShowHistoryMessage) {
                     this.clearHisChatMsg();
                 }
-                let mantisChatNew = {...this.data.mantisChat};
                 mantisChatNew.chat.connected = true;
                 isConnecting = false;
                 mantisChatNew.chat.agent = data.msg.agent || {};
@@ -1742,12 +1739,12 @@ Component({
                 });
             }
         },
-        scrollDown() {
+        scrollDown(time) {
             setTimeout(() => {
                 this.setData({
-                    scrollTop: 999999
+                    scrollBottomId: 'scrollDown'
                 })
-            }, 200);
+            }, time || 200)
         },
         // 清理历史聊天信息
         clearHisMsg() {
@@ -2856,7 +2853,7 @@ Component({
         imgLoadComplete(e) {
             let msgId = e.target.dataset.id;
             this.setData({
-                scrollBottomId: msgId
+                scrollBottomId: 'scrollDown'
             })
         },
         // 表单留言
@@ -3060,7 +3057,7 @@ Component({
                                 autoChatDelay = -1;
                             }
 
-                            if (autoChatDelay === -1) {
+                            if (autoChatDelay === -1 && !probeData.robotChatNotAuto) {
                                 setTimeout(function () {
                                     if (mantisChat.chat.hasChat) {
                                         return;

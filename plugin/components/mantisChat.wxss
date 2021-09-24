@@ -72,6 +72,11 @@
     border-bottom: 10rpx solid #F5F8FA;
 }
 
+.scrollDown{
+    height: 60rpx;
+    width: 100%;
+}
+
 /*--------评价-------*/
 .evaluationModal {
     position: fixed;
