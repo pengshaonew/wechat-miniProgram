@@ -2850,8 +2850,7 @@ Component({
                 visitorForm
             })
         },
-        imgLoadComplete(e) {
-            let msgId = e.target.dataset.id;
+        imgLoadComplete() {
             this.setData({
                 scrollBottomId: 'scrollDown'
             })

@@ -146,7 +146,7 @@
                                 <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
-                                   src="../utils/img/studentDefaultHead.png"></image>
+                                   src="../utils/img/studentDefaultHead.png" />
                         </view>
                     </view>
                     <!--评价结果-->
