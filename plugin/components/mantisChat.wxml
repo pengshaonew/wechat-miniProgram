@@ -36,8 +36,8 @@
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
                         <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
-                            <text wx:if="{{item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
-                            <text wx:if="{{item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
+                            <text class="txt" wx:if="{{item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
+                            <text class="txt" wx:if="{{item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
                         </view>
                         <!--选择性消息-->
                         <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
@@ -68,7 +68,7 @@
                     </view>
                     <!--评价结果-->
                     <view class="evaluate_result" wx:if="{{item.evaluationFlag === 'EVALUATE_RESULT'}}">
-                        <text>{{item.msg}}</text>
+                        <text class="txt">{{item.msg}}</text>
                     </view>
                     <!--表单消息-->
                     <view class="formMsg" wx:if="{{item.formData && item.is_submit !== 'Y'}}">
@@ -119,8 +119,8 @@
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
                         <view class="msg_btnBox" wx:if="{{item.phone || item.wechatCode}}">
-                            <text wx:if="{{!probeData.callPhoneNumberFlag && item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
-                            <text wx:if="{{!probeData.copyWechatNumberFlag && item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
+                            <text class="txt" wx:if="{{!probeData.callPhoneNumberFlag && item.phone}}" data-phone="{{item.phone}}" bindtap="callPhone" >电话咨询</text>
+                            <text class="txt" wx:if="{{!probeData.copyWechatNumberFlag && item.wechatCode}}" data-text="{{item.wechatCode}}" bindtap="copy">{{item.copyWechatBtnText}}</text>
                         </view>
                         <!--选择性消息-->
                         <view class="choice-btn-content" wx:if="{{item.choiceMsg.content}}">
@@ -233,7 +233,7 @@
 <!--留言内容-->
 <view class="leavingMessage" style="display:{{isShowLeave?'flex':'none'}}">
     <view class="header" style="background:{{probeData.mbTitleColor}}">
-        <text>在线留言</text>
+        <text class="txt">在线留言</text>
         <view class="headerR">
             <image wx:if="{{probeData.mbAllowClose}}" bindtap="hideResvDiv" class="closeIcon" src="../utils/img/backBtn.png" />
         </view>

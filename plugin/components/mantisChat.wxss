@@ -125,7 +125,7 @@
     text-align: center;
 }
 
-.evaluate_result text {
+.evaluate_result .txt {
     color: #7c7f82;
     font-size: 24rpx;
     background: rgba(0, 0, 0, 0.08);
@@ -239,7 +239,7 @@
     flex-wrap: wrap;
 }
 
-.msgItem .msg_btnBox > text {
+.msgItem .msg_btnBox .txt {
     min-width: 132rpx;
     height: 50rpx;
     border: 1px solid #347eff;
@@ -401,7 +401,7 @@
     height: 100rpx;
 }
 
-.leavingMessage .header text {
+.leavingMessage .header .txt {
     font-size: 28rpx;
     margin-left: 20rpx;
     max-width: 480rpx;
