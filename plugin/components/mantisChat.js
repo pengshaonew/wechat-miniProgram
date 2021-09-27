@@ -280,21 +280,27 @@ Component({
         ipInfo: {},
     },
     observers: {
-        'phone': function (phone) {
+        'phone': function (val) {
             const mantisChat = this.data.mantisChat;
-            if (phone && mantisChat.chat.connected) {
-                this.sendMessage(phone);
+            if (val && mantisChat.chat.connected) {
+                this.sendMessage(val);
                 propPhoneSendFlag = true;
             }
         },
-        "params": function (params){
-            let miniProgramParams = params.miniProgramParams;
+        "params": function (val){
+            let miniProgramParams = val.miniProgramParams;
             let mantisChatNew = {...this.data.mantisChat};
             if (miniProgramParams) {
                 mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + miniProgramParams;
                 mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + miniProgramParams;
             }
             this.handleMantisChat(mantisChatNew);
+        },
+        'uid': function (val) {
+            let mantisChatNew = {...this.data.mantisChat};
+            if (!mantisChatNew.uid) {
+                this.handleUid(val);
+            }
         }
     },
 
