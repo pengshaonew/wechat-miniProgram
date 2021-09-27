@@ -1,11 +1,14 @@
 const plugin = requirePlugin('mantisChat')
 Page({
     data: {
-        param: {}
+        params: {}
     },
     onLoad() {
         plugin.sayHello()
         // const world = plugin.answer
+        this.setData({
+            params: {miniProgramParams: 'sku=1077777&platform=1&gdt_vid=wx0ewinbalytptma00&weixinadinfo=20966864.wx0ewinbalytptma00.0.1'}
+        })
     },
     onReady() {
         this.mantisChat = this.selectComponent('#mantisChat');

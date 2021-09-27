@@ -12,4 +12,5 @@
         companyId="3403"
         probeId="61416b4442e68264401c5f86"
         chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3403&mpid=61416b4442e68264401c5f86"
+        params="{{params}}"
 />

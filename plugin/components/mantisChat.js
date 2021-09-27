@@ -286,6 +286,15 @@ Component({
                 this.sendMessage(phone);
                 propPhoneSendFlag = true;
             }
+        },
+        "params": function (params){
+            let miniProgramParams = params.miniProgramParams;
+            let mantisChatNew = {...this.data.mantisChat};
+            if (miniProgramParams) {
+                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + miniProgramParams;
+                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + miniProgramParams;
+            }
+            this.handleMantisChat(mantisChatNew);
         }
     },
 
