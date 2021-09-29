@@ -288,11 +288,12 @@ Component({
             }
         },
         "params": function (val){
+            const {chatPageUrl} = this.data;
             let miniProgramParams = val.miniProgramParams;
             let mantisChatNew = {...this.data.mantisChat};
             if (miniProgramParams) {
-                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + miniProgramParams;
-                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + miniProgramParams;
+                mantisChatNew.chatPageUrl = chatPageUrl + miniProgramParams;
+                mantisChatNew.ocpcUrl = chatPageUrl + miniProgramParams;
             }
             this.handleMantisChat(mantisChatNew);
         },
@@ -490,8 +491,8 @@ Component({
             mantisChatNew.uid = uid || this.handleUid(); // 获取uid
             mantisChatNew.chatPageUrl = chatPageUrl;
             if (miniProgramParams) {
-                mantisChatNew.chatPageUrl = mantisChatNew.chatPageUrl + miniProgramParams;
-                mantisChatNew.ocpcUrl = mantisChatNew.chatPageUrl + miniProgramParams;
+                mantisChatNew.chatPageUrl = chatPageUrl + miniProgramParams;
+                mantisChatNew.ocpcUrl = chatPageUrl + miniProgramParams;
             }
             this.handleMantisChat(mantisChatNew);
         },

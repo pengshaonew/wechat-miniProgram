@@ -9,7 +9,7 @@
 {
     "plugins": {
         "mantisChat": {
-            "version": "2.0.0",
+            "version": "2.0.2",
             "provider": "wxc6e2bf2f6fc2e53a"
         }
     }
@@ -89,7 +89,7 @@ handleSubmit() {
     
         object 对象有如下参数:
         
-        miniProgramParams 小程序携带参数，如：sku=1077777&platform=1&gdt_vid=wx0ewinbalytptma00&weixinadinfo=20966864.wx0ewinbalytptma00.0.1
+        miniProgramParams 小程序携带参数，如：&sku=1077777&platform=1&gdt_vid=wx0ewinbalytptma00&weixinadinfo=20966864.wx0ewinbalytptma00.0.1
         account
         userId
         pageParam 页面埋码参数

@@ -9,8 +9,8 @@
 </block>
 <mantisChat
         id="mantisChat"
-        companyId="3403"
-        probeId="61416b4442e68264401c5f86"
-        chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3403&mpid=61416b4442e68264401c5f86"
+        companyId="6138"
+        probeId="6151b7e718ec9f6b1efc001f"
+        chatPageUrl="https://chatn5.bjmantis.net/chat/t1/chat.html?mcid=6138&mpid=6151b7e718ec9f6b1efc001f"
         params="{{params}}"
 />
