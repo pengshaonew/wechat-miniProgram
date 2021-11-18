@@ -889,7 +889,9 @@ Component({
                         data.timeStr = this.dateFormat(new Date(data.time), "yyyy-MM-dd hh:mm:ss");
                     }
                 } else {
-                    data.msg = this.msgReplaceQrCode(data.msg);
+                    if (data.wechatMatchType !== 'ENTERPRISE') {
+                        data.msg = this.msgReplaceQrCode(data.msg);
+                    }
                     // 排除自动发送的消息msgType 手动发送消息 M  其他消息 A
                     if (!!msgType && msgType !== 'A') {
                         mantisChatNew.chat.agentSent = true;
@@ -1063,7 +1065,9 @@ Component({
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
-                        f.msg = this.msgReplaceQrCode(f.msg);
+                        if (f.wechatMatchType !== 'ENTERPRISE') {
+                            f.msg = this.msgReplaceQrCode(f.msg);
+                        }
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1178,7 +1182,9 @@ Component({
                     if (say_from === 'A') {
                         const phoneReg = phoneRegExp;
                         const wechatReg = wechatRegExp;
-                        f.msg = this.msgReplaceQrCode(f.msg);
+                        if (f.wechatMatchType !== 'ENTERPRISE') {
+                            f.msg = this.msgReplaceQrCode(f.msg);
+                        }
                         let phoneFlag = phoneReg.exec(f.msg);
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             f.phone = phoneFlag[0];
@@ -1525,7 +1531,9 @@ Component({
                             let f = m[j];
                             let msg = f.msg;
                             if (!!msg) {
-                                f.msg = this.msgReplaceQrCode(f.msg);
+                                if (f.wechatMatchType !== 'ENTERPRISE') {
+                                    f.msg = this.msgReplaceQrCode(f.msg);
+                                }
                                 f.msg = this.msgReplaceImgWidth(f.msg);
                                 if (msg.indexOf("isChoiceMsg") !== -1) {  //选择性消息
                                     f.choiceMsg = JSON.parse(f.msg);
@@ -1609,7 +1617,9 @@ Component({
                         for (let j = 0; j < m.length; j++) {
                             let f = m[j];
                             if (!!f.msg) {
-                                f.msg = this.msgReplaceQrCode(f.msg);
+                                if(f.wechatMatchType !== 'ENTERPRISE'){
+                                    f.msg = this.msgReplaceQrCode(f.msg);
+                                }
                                 f.msg = this.msgReplaceImgWidth(f.msg);
                                 if (!!f.msg) {
                                     welcomeMsgs.push(f);
@@ -1709,7 +1719,7 @@ Component({
             if (msg.indexOf('#WECHAT_NICKNAME#') !== -1) {
                 msg = msg.replace(/#WECHAT_NICKNAME#/g, wechatRule.nickName || '');
             }
-            this.sendSystemMsg(msg, {isWelcome: true, wechatRule: wechatRule});
+            this.sendSystemMsg(msg, {isWelcome: true, wechatRule: wechatRule, wechatMatchType: msgData.wechatMatchType});
         },
         mantisCreateGuid: function () {
             return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -2138,6 +2148,7 @@ Component({
                 //消息接口
                 content: msg,
                 isWelcome: opt.isWelcome || false,
+                wechatMatchType: opt.wechatMatchType || null,
                 chatId: mantisChat.chatId,
                 uid: mantisChat.chat.agent.agentId,
                 channelId: mantisChat.chat.channelId,

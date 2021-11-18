@@ -1,38 +1,89 @@
-const plugin = requirePlugin('mantisChat')
 Page({
     data: {
-        params: {}
-    },
-    onLoad() {
-        plugin.sayHello()
-        // const world = plugin.answer
+        companyId: 9989,
+        array: ['初中及以下','高中', '大专', '本科及以上'],
+        objectArray: [
+            {
+                id: 0,
+                name: '初中及以下'
+            },
+            {
+                id: 1,
+                name: '高中'
+            },
+            {
+                id: 2,
+                name: '大专'
+            },
+            {
+                id: 3,
+                name: '本科及以上'
+            }
+        ],
+        index: 0
+        // region: ['北京市','北京市','东城区']
+    },bindPickerChange: function(e) {
         this.setData({
-            params: {miniProgramParams: 'sku=1077777&platform=1&gdt_vid=wx0ewinbalytptma00&weixinadinfo=20966864.wx0ewinbalytptma00.0.1'}
+            index: e.detail.value
         })
     },
+    // bindRegionChange: function (e) {
+    //   this.setData({
+    //     region: e.detail.value
+    //   })
+    // },
     onReady() {
         this.mantisChat = this.selectComponent('#mantisChat');
-        this.messageAudio = wx.createAudioContext('message');
-        this.messageAudio.setSrc('https://probe.bjmantis.net/chat/13203.mp3');
     },
+    // 发起会话时调用
     mantisRequestChat() {
         this.mantisChat._requestChat();
     },
-    handleSubmit() {
-        let obj = {
-            phone: '13123123123',
-            name: '张三',
-            content:'备注内容',
-            others: {
-                area:'地域值',
-                qq:'QQ',
-                weChat:'微信',
-                customerFieldMap:{  // 自定义字段,此对象中的字段如果和系统中自定义字段对应上就会显示在转客后对应字段的位置，如果对应不上会显示在转客后的备注里
-                    "年龄":'24',
-                    "兴趣":'运动'
-                }
-            }
+    // 留言表单提交时调用
+    handleSubmit(e) {
+        let values = e.detail.value;
+        if(values.content ==null){
+            wx.showToast({
+                title: '请选择您的学历',
+                icon: 'none'
+            });
+            return false;
         }
-        this.mantisChat._sendPage(obj);
+        if(values.username==""){
+            wx.showToast({
+                title: '请输入您的姓名',
+                icon: 'none'
+            });
+            return false;
+        }else if(!/^([\u4e00-\u9fa5]{2,10})$/.test(values.username)){
+            wx.showToast({
+                title: '您的姓名有误,请检查确认',
+                icon: 'none'
+            });
+            return false;
+        }
+        if (!/^1[3-9]\d{9}$/.test(values.phone)) {
+            wx.showToast({
+                title: '联系方式有误,请检查确认',
+                icon: 'none'
+            });
+            return;
+        }
+        this.mantisChat._sendPage({
+            phone: values.phone,
+            name: values.username,
+            content: this.data.objectArray[values.content].name
+        });
+    },
+    onShareAppMessage: function () {
+        return {
+            title: '经济师报考介绍',
+            path: '/pages/introduce/index.wxml'
+        }
+    },
+    onShareTimeline: function () {
+        return {
+            title: '经济师报考介绍'
+        }
     }
-})
+});

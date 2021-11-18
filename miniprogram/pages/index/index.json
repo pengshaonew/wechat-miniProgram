@@ -1,5 +1,7 @@
 {
   "usingComponents": {
     "mantisChat": "plugin://mantisChat/mantisChat"
-  }
+  },
+    "navigationBarTitleText": "经济师报考介绍"
+  
 }

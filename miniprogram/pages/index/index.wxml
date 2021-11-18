@@ -1,16 +1,27 @@
-<!--<navigator id="nav" url="plugin://hello-plugin/hello-page">-->
-<!--  Go to Plugin page-->
-<!--</navigator>-->
-
-<button bindtap="mantisRequestChat">发起会话</button>
-<button bindtap="handleSubmit">表单留言</button>
-<block wx:for="{{[1,2,3,4,5,6,7,8,9,0]}}">
-    <view class="item">{{item}}</view>
-</block>
-<mantisChat
-        id="mantisChat"
-        companyId="6138"
-        probeId="6151b7e718ec9f6b1efc001f"
-        chatPageUrl="https://chatn5.bjmantis.net/chat/t1/chat.html?mcid=6138&mpid=6151b7e718ec9f6b1efc001f"
-        params="{{params}}"
-/>
+<view class="testsite">
+    <view class="testsite_form">
+        <view class="ctitle">经济师报名条件自助查询</view>
+        <form catchsubmit="handleSubmit" >
+            <view class="section">
+                <picker bindchange="bindPickerChange" value="{{objectArray.id}}" range="{{array}}" name="content">
+                    {{index==''?"请选择您的学历":array[index]}}
+                </picker>
+            </view>
+            <view class="section">
+                <input class="leaveInput" type="text" name="username" placeholder="请输入您的姓名" />
+            </view>
+            <view class="section2">
+                <input class="leaveInput" name="phone" placeholder="请输入您的手机号"/>
+            </view>
+            <view class="tips">（请认真填写，稍后将以短信或语音方式通知您）</view>
+            <button type="primary" formType="submit" >立即查询</button>
+        </form>
+    </view>
+    <mantisChat
+            id="mantisChat"
+            companyId="3401"
+            probeId="5fc6f7bbdc4cec2b565684db"
+            chatPageUrl="https://test.bjmantis.net/chat/js/dist/mantis.min.js?9989#5fc6f7bbdc4cec2b565684db"
+    />
+</view>
+<!-- <script src="https://test.bjmantis.net/chat/js/dist/mantis.min.js?3401#5fc6f7bbdc4cec2b565684db"></script> -->

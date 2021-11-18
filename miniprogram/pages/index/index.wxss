@@ -1,21 +1,45 @@
-/* pages/index/index.wxss */
-
-button {
-    margin-bottom: 10rpx;
+/* pages/testsite/index.wxss */
+.content{
+    padding: 10rpx 30rpx;
 }
-
-#nav {
+.testsite_form{
+    padding: 40rpx 0;
+}
+.section,.section2{
+    background-color: #fff;
+    margin: 20rpx auto;
+    width: 80%;
+    height: 70rpx;
+    line-height: 70rpx;
+    padding-left: 10rpx;
+    border: solid 1rpx #ccc;
+}
+.section2{
+    margin-top: 30rpx;
+}
+.tips{
+    font-size: 32rpx;
     text-align: center;
-    background: #eeeeee;
-    margin: 1em;
-    padding: 1em;
-    border-radius: 5px;
 }
-
-#add {
-    margin: 1em;
+button{
+    color: #fff;
+    background-color: orange;
+    margin-top: 30rpx;
+    border-radius: 50rpx !important;
+    font-weight: 400 !important;
 }
+input{
+    height: 70rpx;
+    line-height: 70rpx;
+}
+.p{
+    text-indent: 2em;
 
-.item {
-    height: 280rpx;
+}
+.p,.title,.etitle{
+    line-height: 50rpx;
+}
+.ctitle{
+    text-align: center;
+    font-size: 40rpx;
 }
