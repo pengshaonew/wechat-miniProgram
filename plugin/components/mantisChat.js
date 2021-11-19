@@ -1700,6 +1700,7 @@ Component({
                 companyId: probeData.companyId,
                 chatId: mantisChat.chatId,
                 wechatAssignId: msgData.wechatAssignId,
+                wechatMatchType: msgData.wechatMatchType,
                 uid: mantisChat.uid
             }, data=>{
                 mantisChat.chat.wechatRule = data.wechatInfo;
@@ -1710,6 +1711,7 @@ Component({
             const { mantisChat } = this.data;
             let wechatRule = mantisChat.chat.wechatRule;
             let msg = msgData.msg;
+            if(!wechatRule) return;
             if (msg.indexOf('#WECHAT_WORD#') !== -1) {
                 msg = msg.replace(/#WECHAT_WORD#/g, wechatRule.weChat || '');
             }
