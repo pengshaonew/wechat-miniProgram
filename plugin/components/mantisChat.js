@@ -114,6 +114,8 @@ let ttlInterval = null;
 // socket是否在连接中
 let isConnecting = false;
 
+let trackCount = 0;
+
 let chatIdOld = null;
 // props手机号发送标记
 let propPhoneSendFlag = false;
@@ -3137,6 +3139,9 @@ Component({
         mantisSendAlive(why) {
             const _this = this;
             const {mantis, mantisChat, probeData} = this.data;
+            if(trackCount >= 50){
+                return;
+            }
             let liveInfo = {};
             liveInfo.type = "L";
             liveInfo.e_id = mantis.e_id;
@@ -3159,6 +3164,7 @@ Component({
 
             // 是否是聊天模式
             liveInfo.mode = "no";
+            trackCount++;
             wx.request({
                 url: "https://tk" + probeData.chatServer + "/u/1.gif",
                 data: liveInfo,
