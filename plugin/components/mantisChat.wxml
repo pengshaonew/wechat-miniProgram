@@ -77,13 +77,23 @@
                                 {{item.formData.formTitle}}
                             </view>
                             <view wx:for="{{item.formData.fieldList}}" wx:for-item="formItem">
-                                <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" />
-<!--                                <input placeholder="{{formItem.name}}"  name="{{formItem.name}}" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}" class="msgForm" />-->
-                                <!--                            <picker bindchange="bindPickerChange" range="{{formItem.fieldForm.option}}" name="picker" wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}" >-->
-                                <!--                                <view class="msgForm">-->
-                                <!--                                    当前选择：1-->
-                                <!--                                </view>-->
-                                <!--                            </picker>-->
+                                <input
+                                        placeholder="{{formItem.name}}"  name="{{formItem.name}}" class="msgForm" wx:if="{{formItem.fieldForm.fieldType === 'TEXT'}}"
+                                        cursor-spacing="100"
+                                />
+                                <picker
+                                        bindchange="bindPickerChange"
+                                        range="{{formItem.fieldForm.option}}"
+                                        name="{{formItem.name}}"
+                                        wx:if="{{formItem.fieldForm.fieldType !== 'TEXT'}}"
+                                        data-name="{{formItem.name}}"
+                                        data-msgid="{{item._id || item.msgId}}"
+                                >
+                                    <view class="msgForm">
+                                        <text wx:if="{{!visitorForm[item._id || item.msgId][formItem.name + 'value']}}" class="pickerPlaceholder">{{formItem.name}}</text>
+                                        <text wx:if="{{!!visitorForm[item._id || item.msgId][formItem.name + 'value']}}">{{visitorForm[item._id || item.msgId][formItem.name + 'value']}}</text>
+                                    </view>
+                                </picker>
                             </view>
                             <button
                                     type="primary"

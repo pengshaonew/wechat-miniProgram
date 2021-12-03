@@ -20,8 +20,8 @@
     <mantisChat
             id="mantisChat"
             companyId="3401"
-            probeId="5fc6f7bbdc4cec2b565684db"
-            chatPageUrl="https://test.bjmantis.net/chat/js/dist/mantis.min.js?9989#5fc6f7bbdc4cec2b565684db"
+            probeId="61a7334bdc4cec66396eb116"
+            chatPageUrl="https://test.bjmantis.net/chat/js/dist/mantis.min.js?3401#61a7334bdc4cec66396eb116"
     />
 </view>
 <!-- <script src="https://test.bjmantis.net/chat/js/dist/mantis.min.js?3401#5fc6f7bbdc4cec2b565684db"></script> -->
