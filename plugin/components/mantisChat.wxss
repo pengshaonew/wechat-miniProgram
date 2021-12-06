@@ -125,7 +125,7 @@
     text-align: center;
 }
 
-.evaluate_result .txt {
+.evaluate_result text {
     color: #7c7f82;
     font-size: 24rpx;
     background: rgba(0, 0, 0, 0.08);

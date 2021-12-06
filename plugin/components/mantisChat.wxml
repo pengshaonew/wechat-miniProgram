@@ -3,7 +3,7 @@
 >
     <view class="mantisChatHeader" style="background:{{probeData.mbTitleColor}}">
         <view class="headerL">
-            <image src="{{probeData.mbTitleLogoUrl}}" class="headerTitleImg" />
+            <image src="{{probeData.mbTitleLogoUrl || '../utils/img/agentDefaultHead.png'}}" class="headerTitleImg" />
             <view class="title" style="color:{{probeData.mbTitleTxtColor}}">{{probeData.mbTitleTxt}}</view>
         </view>
         <view class="headerR">
@@ -31,7 +31,7 @@
                             <view class="msgCon">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
                                 <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" show-menu-by-longpress="true" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
@@ -60,7 +60,7 @@
                         <view class="msgItemDown">
                             <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}"/>
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" show-menu-by-longpress="true" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
                                    src="../utils/img/studentDefaultHead.png"></image>
@@ -124,7 +124,7 @@
                             <view class="msgCon">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{!item.choiceMsg && item.type !== 'IMG'}}"/>
                                 <rich-text nodes="{{item.choiceMsg && item.choiceMsg.additionMsg}}" wx:if="{{item.choiceMsg && item.type !== 'IMG'}}"/>
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" show-menu-by-longpress="true" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                         </view>
                         <!--                    复制微信号、电话咨询按钮-->
@@ -153,7 +153,7 @@
                         <view class="msgItemDown">
                             <view class="msgCon" style="background:{{probeData.mbStudentMsgBg}}">
                                 <rich-text nodes="{{item.msg}}" wx:if="{{item.type !== 'IMG'}}" />
-                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
+                                <image class="msgImg" src="{{item.imgSrc}}" wx:if="{{item.type === 'IMG'}}" bindload="imgLoadComplete" show-menu-by-longpress="true" data-id="id_{{item._id || item.msgId}}" mode="aspectFit" />
                             </view>
                             <image class="agentHead" mode="aspectFit"
                                    src="../utils/img/studentDefaultHead.png" />
