@@ -121,7 +121,7 @@ let chatIdOld = null;
 let propPhoneSendFlag = false;
 
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
-const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/ig;
+const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/i;
 
 // 默认配置
 let defaultConfig = {
@@ -1523,6 +1523,7 @@ Component({
             this.clearHisMsg();
             welcomeMsgs = [];
             let isSent = false;
+            const probeData = this.data.probeData;
             if (!!msgList) {
                 let msgListLen = msgList.length;
                 for (let i = 0; i < msgListLen; i++) {
@@ -1546,6 +1547,11 @@ Component({
                                         dataTime = dataTime + mantisChatNew.mantisTtimeDifference;
                                     }
                                     let timeStr = new Date(dataTime);
+                                    let wechatFlag = wechatRegExp.exec(msg);
+                                    if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
+                                        f.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
+                                        f.wechatCode = wechatFlag[5];
+                                    }
                                     f.timeStr = this.dateFormat(timeStr, "yyyy-MM-dd hh:mm:ss");
                                     f.say_from = 'A';
                                     this.setData({msgList: [f]}, () => {
@@ -1612,6 +1618,7 @@ Component({
                 return;
             }
 
+            const probeData = this.data.probeData;
             if (!!msgs) {
                 for (let i = 0; i < msgs.length; i++) {
                     let m = msgs[i];
@@ -1623,6 +1630,11 @@ Component({
                                     f.msg = this.msgReplaceQrCode(f.msg);
                                 }
                                 f.msg = this.msgReplaceImgWidth(f.msg);
+                                let wechatFlag = wechatRegExp.exec(f.msg);
+                                if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
+                                    f.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
+                                    f.wechatCode = wechatFlag[5];
+                                }
                                 if (!!f.msg) {
                                     welcomeMsgs.push(f);
                                 }
@@ -1703,7 +1715,9 @@ Component({
                 chatId: mantisChat.chatId,
                 wechatAssignId: msgData.wechatAssignId,
                 wechatMatchType: msgData.wechatMatchType,
-                uid: mantisChat.uid
+                uid: mantisChat.uid,
+                agentWechatFlag: msgData.agentWechatFlag,
+                agentId: mantisChat.chat.agent.agentId
             }, data=>{
                 mantisChat.chat.wechatRule = data.wechatInfo;
                 this.replaceWechatCode(msgData)
