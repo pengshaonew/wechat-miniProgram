@@ -812,6 +812,8 @@ Component({
                 const probeData = this.data.probeData;
                 let mantisChatNew = {...this.data.mantisChat};
                 const say_from = data.say_from;
+                const phoneReg = phoneRegExp;
+                const wechatReg = wechatRegExp;
                 const evaluationFlag = data.evaluationFlag;
                 let msgListNew = [...this.data.msgList];
                 if(msgListNew.some(item => (item._id || item.msgId) === data.msgId && item.msg === data.msg)){
@@ -900,17 +902,9 @@ Component({
                         this.setupRemindTimer();//访客未回复自动回复开始计时
                     }
                     if (say_from === 'A' && (msgType === 'M' || msgType === 'F')) {    // 收到咨询师的消息
-                        const phoneReg = phoneRegExp;
-                        const wechatReg = wechatRegExp;
                         let phoneFlag = phoneReg.exec(data.msg)
                         if (phoneFlag && !probeData.callPhoneNumberFlag) {
                             data.phone = phoneFlag[0];
-                        }
-                        let plainMsg = data.msg.replace(/<\/?[^>]*>/g, '').replace(/&nbsp;/ig, '');
-                        let wechatFlag = wechatReg.exec(plainMsg);
-                        if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
-                            data.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
-                            data.wechatCode = wechatFlag[5];
                         }
                         lastCounselorMsgTime = new Date().getTime();
                         if (agentTimedTimer) { // 清除咨询师的计时器
@@ -946,6 +940,13 @@ Component({
                     setTimeout(function () {
                         _this.stopAgentKeyIn();
                     }, 100);
+                }
+
+                let plainMsg = data.msg.replace(/<\/?[^>]*>/g, '').replace(/&nbsp;/ig, '');
+                let wechatFlag = wechatReg.exec(plainMsg);
+                if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
+                    data.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
+                    data.wechatCode = wechatFlag[5];
                 }
                 if (!msgListNew.some(item => (item._id || item.msgId) === data.msgId && item.msg === data.msg)) {
                     msgListNew.push(data);
@@ -1547,7 +1548,8 @@ Component({
                                         dataTime = dataTime + mantisChatNew.mantisTtimeDifference;
                                     }
                                     let timeStr = new Date(dataTime);
-                                    let wechatFlag = wechatRegExp.exec(msg);
+                                    let plainMsg = f.msg.replace(/<\/?[^>]*>/g, '').replace(/&nbsp;/ig, '');
+                                    let wechatFlag = wechatRegExp.exec(plainMsg);
                                     if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
                                         f.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
                                         f.wechatCode = wechatFlag[5];
@@ -1630,11 +1632,6 @@ Component({
                                     f.msg = this.msgReplaceQrCode(f.msg);
                                 }
                                 f.msg = this.msgReplaceImgWidth(f.msg);
-                                let wechatFlag = wechatRegExp.exec(f.msg);
-                                if (wechatFlag && wechatFlag.length >= 6 && !probeData.copyWechatNumberFlag) {
-                                    f.copyWechatBtnText = '复制' + wechatFlag[1].replace(/[:：]/g, '');
-                                    f.wechatCode = wechatFlag[5];
-                                }
                                 if (!!f.msg) {
                                     welcomeMsgs.push(f);
                                 }
@@ -1692,12 +1689,9 @@ Component({
                         }
 
                         if (
-                            e.wechatAssignId &&
-                            (
-                                msg.indexOf('#WECHAT_WORD#') !== -1 ||
-                                msg.indexOf('#WECHAT_QRCODE#') !== -1 ||
-                                msg.indexOf('#WECHAT_NICKNAME#') !== -1
-                            )
+                            msg.indexOf('#WECHAT_WORD#') !== -1 ||
+                            msg.indexOf('#WECHAT_QRCODE#') !== -1 ||
+                            msg.indexOf('#WECHAT_NICKNAME#') !== -1
                         ) {
                             _this.getWechatRule(e);
                         } else {
