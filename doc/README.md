@@ -9,7 +9,7 @@
 {
     "plugins": {
         "mantisChat": {
-            "version": "2.0.2",
+            "version": "2.1.0",
             "provider": "wxc6e2bf2f6fc2e53a"
         }
     }
