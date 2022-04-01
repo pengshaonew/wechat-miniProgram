@@ -123,6 +123,9 @@ let propPhoneSendFlag = false;
 const phoneRegExp = /(\b1[3-9]\d\s?\d{4}\s?\d{4}\b)|(\b0\d{2,3}[^\d]?\d{3,4}\s?\d{4}\b)|(\b400[^\d]?\d{3}[^\d]?\d{4}\b)/;
 const wechatRegExp = /((微信号?\s*[:|：]?)|((v|wx)[:|：]))\s*([a-zA-Z1-9][-_a-zA-Z0-9]{5,19})/i;
 
+// 未读消息列表id
+let unreadAry = [];
+
 // 默认配置
 let defaultConfig = {
     "tip": {
@@ -336,6 +339,10 @@ Component({
             if (autoShowHideChatTimer) {
                 clearTimeout(autoShowHideChatTimer);
                 autoShowHideChatTimer = null;
+            }
+            if(unreadAry.length){
+                this.handleMsgRead(unreadAry);
+                unreadAry = [];
             }
             const {probeData, isShowChat} = this.data;
             let mantisChatNew = {...this.data.mantisChat};
@@ -816,6 +823,7 @@ Component({
                 const wechatReg = wechatRegExp;
                 const evaluationFlag = data.evaluationFlag;
                 let msgListNew = [...this.data.msgList];
+                let msgType = data.msgType;
                 if(msgListNew.some(item => (item._id || item.msgId) === data.msgId && item.msg === data.msg)){
                     return;
                 }
@@ -845,6 +853,13 @@ Component({
                         this.setRobotAutoMsgTimer();
                     }
                     this.responseMessage(data, "MESSAGE");
+                    if (msgType === 'M' || (msgType === 'A' && /^(V|A)$/.test(data.autoFlag))) {
+                        if (this.data.isShowChat) {
+                            this.handleMsgRead([data.msgId]);
+                        } else {
+                            unreadAry.push(data.msgId);
+                        }
+                    }
                 }
 
                 if (say_from === 'R') {
@@ -865,7 +880,6 @@ Component({
                     }
                 }
 
-                let msgType = data.msgType;
                 if (say_from !== 'V' && say_from !== 'A' || msgType === 'F_S') {
                     return;
                 }
@@ -1027,9 +1041,11 @@ Component({
                     let f = mms[i];
                     if (f.autoFlag === 'V') {
                         //自动回复
-                        visitantAutoResponseCount = visitantAutoResponseCount + 1
+                        visitantAutoResponseCount = visitantAutoResponseCount + 1;
+                        !f.is_read && this.handleMsgRead([f._id]);
                     } else if (f.autoFlag === 'A') {
                         counselorAutoResponseCount = counselorAutoResponseCount + 1;
+                        !f.is_read && this.handleMsgRead([f._id]);
                     }
                     let say_from = f.say_from;
 
@@ -1101,12 +1117,15 @@ Component({
                         if (say_from === 'A') {
                             mantisChatNew.chat.agentMsgCount++;
                             // 判断msgType  是不是咨询师手工发送的消息 msgType 手动发送消息 M  其他消息 A
-                            if (data.msgType && data.msgType !== 'A') {
+                            if (f.msgType && f.msgType !== 'A') {
                                 mantisChatNew.chat.agentSent = true;
                             }
                             mantisChatNew.chat.ball = {who: 'V', lastTime: new Date().getTime()};
                             if (mantisChatNew.chat.isRobot === 'Y') {
                                 this.setRobotAutoMsgTimer();
+                            }
+                            if (f.msgType === 'M' && !f.is_read) {
+                                this.handleMsgRead([f._id]);
                             }
                         }
                     }
@@ -1296,7 +1315,7 @@ Component({
                     if (agentName) {
                         mantisChatNew.chat.agentName = agentName;
                     }
-                    if (agentPhone) {
+                    if (agentPhone !== 'null' && agentPhone) {
                         mantisChatNew.chat.agentPhone = agentPhone;
                     }
                 } catch (e) {
@@ -1366,6 +1385,9 @@ Component({
                 let msgListNew = this.data.msgList;
                 hisMsgListNew = hisMsgListNew.filter(item => (item._id || item.msgId) !== data.messageId);
                 msgListNew = msgListNew.filter(item => (item._id || item.msgId) !== data.messageId);
+                unreadAry = unreadAry.filter(function (item){
+                    return item !== data.messageId;
+                });
                 this.setData({
                     hisMsgList: hisMsgListNew,
                     msgList: msgListNew
@@ -2717,6 +2739,17 @@ Component({
                     }, autoChatDelay * 1000);
                     break;
             }
+        },
+        handleMsgRead(msgIds){
+            const {mantisChat, companyId} = this.data;
+            pomelo.request("chat.chatHandler.messageRead", {
+                msgIds: msgIds,
+                chatId: mantisChat.chatId,
+                companyId,
+                visitorId: mantisChat.uid
+            }, function (res) {
+
+            });
         },
         // 监听挽留手机号
         changeRetainPhone(e) {

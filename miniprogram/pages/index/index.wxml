@@ -19,9 +19,9 @@
     </view>
     <mantisChat
             id="mantisChat"
-            companyId="8424"
-            probeId="61d7ae725e9e1a30f9d4787c"
-            chatPageUrl="https://chatn6.bjmantis.net/chat/t1/chat.html?mcid=8424&mpid=61d7ae725e9e1a30f9d4787c"
+            companyId="3403"
+            probeId="60ff7b7942e6824c77cf5c70"
+            chatPageUrl="https://demo2.bjmantis.net/chat/t1/chat.html?mcid=3403&mpid=60ff7b7942e6824c77cf5c70"
     />
 </view>
 <!-- <script src="https://test.bjmantis.net/chat/js/dist/mantis.min.js?3401#5fc6f7bbdc4cec2b565684db"></script> -->
